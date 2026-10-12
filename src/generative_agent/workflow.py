@@ -212,11 +212,15 @@ def run_tabular_generation_workflow(
 
             validation_comparison = {
                 "decision_rule": (
-                    "Select the method with the highest validation data_generation_fidelity from synthetic-vs-validation "
+                    "Select the method with the highest validation selection_score from synthetic-vs-validation "
                     "evaluation. VAE ELBO and flow NLL are used only within their own family searches."
                 ),
-                "metric_direction": "higher data_generation_fidelity is better",
-                "metric_definition": "1 / (1 + mean absolute marginal errors across supported feature summaries)",
+                "metric_direction": "higher selection_score is better",
+                "metric_definition": (
+                    "selection_score = 0.45 train-scale-normalized marginal fidelity + 0.35 dependence preservation "
+                    "+ 0.20 legacy marginal fidelity when correlations are valid; without correlations, 0.75 normalized "
+                    "marginal + 0.25 legacy marginal."
+                ),
                 "sample_count": len(validation_real),
                 "seeds": {
                     "baseline": selected_budget.seed + 7,
@@ -225,53 +229,76 @@ def run_tabular_generation_workflow(
                 },
                 "scores": validation_scores,
             }
-            selected_family = max(validation_scores, key=lambda key: validation_scores[key]["data_generation_fidelity"])
+            selected_family = max(validation_scores, key=lambda key: validation_scores[key]["selection_score"])
+            final_evaluations = {"baseline": baseline_eval.to_dict()}
+            final_generations = {"baseline": baseline}
+            if "vae" in validation_scores:
+                final_vae_generation = generate_synthetic(
+                    models["vae"],
+                    preprocessor,
+                    n_samples=sample_count,
+                    seed=selected_budget.seed + 1,
+                )
+                final_generations["vae"] = final_vae_generation.samples
+                final_evaluations["vae"] = evaluate_synthetic(
+                    train_real=train_frame,
+                    test_real=test_frame,
+                    synthetic=final_vae_generation.samples,
+                    schema=metadata.schema,
+                    method="tabular_vae",
+                ).to_dict()
+            if "flow" in validation_scores:
+                final_flow_generation = generate_flow_synthetic(
+                    models["flow"],
+                    preprocessor,
+                    n_samples=sample_count,
+                    seed=selected_budget.seed + 1,
+                )
+                final_generations["flow"] = final_flow_generation.samples
+                final_evaluations["flow"] = evaluate_synthetic(
+                    train_real=train_frame,
+                    test_real=test_frame,
+                    synthetic=final_flow_generation.samples,
+                    schema=metadata.schema,
+                    method="tabular_flow",
+                ).to_dict()
+
             if selected_family == "baseline":
-                baseline.to_csv(synthetic_path, index=False)
+                final_generations["baseline"].to_csv(synthetic_path, index=False)
                 generation_metadata = {
                     "n_samples": sample_count,
                     "seed": selected_budget.seed,
                     "method": "training_row_bootstrap_selected_by_validation",
                     "output_path": str(synthetic_path),
                 }
-                evaluation_payload = {"selected": baseline_eval.to_dict(), "baseline": baseline_eval.to_dict()}
+                evaluation_payload = {"selected": final_evaluations["baseline"], **final_evaluations}
                 search_payload = family_searches
             else:
                 if selected_family == "vae":
                     selected_config = vae_search.selected.config
                     checkpoint_path = vae_search.selected.checkpoint_path
                     training_failed = vae_search.selected.failed
-                    generation = generate_synthetic(
-                        models["vae"],
-                        preprocessor,
-                        n_samples=sample_count,
-                        seed=selected_budget.seed + 1,
-                        output_path=synthetic_path,
-                    )
+                    final_generations["vae"].to_csv(synthetic_path, index=False)
+                    generation_metadata = {
+                        "n_samples": sample_count,
+                        "seed": selected_budget.seed + 1,
+                        "synthetic_record_column": "synthetic_record",
+                        "method": "tabular_vae",
+                        "output_path": str(synthetic_path),
+                    }
                 else:
                     selected_config = flow_search.selected.config
                     checkpoint_path = flow_search.selected.checkpoint_path
                     training_failed = flow_search.selected.failed
-                    generation = generate_flow_synthetic(
-                        models["flow"],
-                        preprocessor,
-                        n_samples=sample_count,
-                        seed=selected_budget.seed + 1,
-                        output_path=synthetic_path,
-                    )
-                selected_eval = evaluate_synthetic(
-                    train_real=train_frame,
-                    test_real=test_frame,
-                    synthetic=generation.samples,
-                    schema=metadata.schema,
-                    method=f"tabular_{selected_family}",
-                )
-                generation_metadata = generation.metadata
-                evaluation_payload = {
-                    "selected": selected_eval.to_dict(),
-                    selected_family: selected_eval.to_dict(),
-                    "baseline": baseline_eval.to_dict(),
-                }
+                    final_generations["flow"].to_csv(synthetic_path, index=False)
+                    generation_metadata = {
+                        "n_samples": sample_count,
+                        "seed": selected_budget.seed + 1,
+                        "synthetic_record_column": "synthetic_record",
+                        "method": "tabular_flow",
+                        "output_path": str(synthetic_path),
+                    }
+                evaluation_payload = {"selected": final_evaluations[selected_family], **final_evaluations}
                 search_payload = family_searches
 
     decisions = {
@@ -281,7 +308,7 @@ def run_tabular_generation_workflow(
         "constraints": state.feasibility.constraints,
         "objective_decision": decision.to_dict(),
         "selection": (
-            f"Selected {selected_family} using shared validation data_generation_fidelity; held-out test was not used."
+            f"Selected {selected_family} using shared validation selection_score; held-out test was not used."
             if validation_comparison
             else "Baseline selected before generative training."
         ),
@@ -339,7 +366,7 @@ def _render_report(
             "- Binary features use a Bernoulli likelihood parameterized by decoder logits.",
             "- Within-family selection uses validation loss or validation likelihood only inside that family.",
             "- max_models is total trained generative candidates across all families; bootstrap baseline does not consume a training slot.",
-            "- Cross-family selection uses shared validation synthetic-data fidelity; held-out test data is used only for final evaluation.",
+            "- Cross-family selection uses the predeclared validation selection_score; held-out test data is used only for final evaluation.",
             "- RealNVP flow is available only for continuous tabular features with no missing values.",
             "- Conditional generation, class balancing, image generation, GANs, and diffusion are not implemented.",
             "",
@@ -379,6 +406,11 @@ def _validation_score(*, train_real, validation_real, synthetic, schema, method:
     )
     return {
         "data_generation_fidelity": result.objective_metrics["data_generation_fidelity"],
+        "train_scale_normalized_marginal_fidelity": result.objective_metrics[
+            "train_scale_normalized_marginal_fidelity"
+        ],
+        "dependence_preservation": result.objective_metrics["dependence_preservation"],
+        "selection_score": result.objective_metrics["selection_score"],
         "duplicate_fraction": result.duplicate_fraction,
         "nearest_neighbor_mean": result.nearest_neighbor_mean,
     }

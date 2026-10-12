@@ -1,0 +1,157 @@
+{
+  "budget": {
+    "allocation": {
+      "flow": 1,
+      "vae": 1
+    },
+    "max_trained_candidates": 2,
+    "semantics": "max_models is the total number of trained generative candidates across all model families. Bootstrap baseline does not consume a training slot.",
+    "trained_candidates": 2
+  },
+  "flow": {
+    "candidates": [
+      {
+        "checkpoint_path": "outputs/phase4a_wine_white/tabular_flow_candidate_0.pt",
+        "config": {
+          "batch_size": 32,
+          "device": "cpu",
+          "early_stopping_patience": 5,
+          "epochs": 20,
+          "hidden_dim": 32,
+          "input_dim": 11,
+          "learning_rate": 0.001,
+          "num_layers": 4,
+          "seed": 2127
+        },
+        "epochs_ran": 20,
+        "failed": false,
+        "failure_reason": null,
+        "history": {
+          "train_nll": [
+            15.124412713227448,
+            13.796849065356785,
+            12.754572100109524,
+            12.102241613246777,
+            11.79441112059134,
+            11.566847757056907,
+            11.422965014422381,
+            11.306659998717132,
+            11.241714239120483,
+            11.131483722616125,
+            11.076724149562695,
+            10.976132286919487,
+            10.910592008520055,
+            10.893827579639575,
+            10.831578969955444,
+            10.814164152851811,
+            10.770016679057369,
+            10.70028089593958,
+            10.690314407701846,
+            10.678472810321384
+          ],
+          "validation_nll": [
+            14.3749418258667,
+            13.26424789428711,
+            12.397820472717285,
+            12.058106422424316,
+            11.842278480529785,
+            11.646148681640625,
+            11.54341983795166,
+            11.567819595336914,
+            11.443259239196777,
+            11.322436332702637,
+            11.234894752502441,
+            11.212071418762207,
+            11.146615982055664,
+            11.07730770111084,
+            11.0531005859375,
+            11.088271141052246,
+            10.986820220947266,
+            10.96346664428711,
+            10.976367950439453,
+            10.984213829040527
+          ]
+        },
+        "validation_nll": 10.96346664428711,
+        "wall_seconds": 1.7009117919951677
+      }
+    ],
+    "selected_index": 0,
+    "selection_reason": "Selected lowest validation negative log likelihood within flow family; test data was not used."
+  },
+  "vae": {
+    "candidates": [
+      {
+        "checkpoint_path": "outputs/phase4a_wine_white/tabular_vae_candidate_0.pt",
+        "config": {
+          "batch_size": 32,
+          "binary_dim": 0,
+          "continuous_dim": 11,
+          "device": "cpu",
+          "early_stopping_patience": 5,
+          "epochs": 20,
+          "hidden_dims": [
+            32,
+            16
+          ],
+          "input_dim": 11,
+          "kl_weight": 1.0,
+          "latent_dim": 4,
+          "learning_rate": 0.001,
+          "seed": 2026
+        },
+        "epochs_ran": 19,
+        "failed": false,
+        "failure_reason": null,
+        "history": {
+          "train_loss": [
+            15.650201347139147,
+            15.525706891660336,
+            15.234358840518528,
+            15.169126916814733,
+            15.102156762723569,
+            15.07972005561546,
+            15.090545936867043,
+            15.076345779277661,
+            15.063977894959626,
+            15.071920933546844,
+            15.084191507763332,
+            15.080587404745597,
+            15.025966820893464,
+            15.040613615954364,
+            15.033105823728773,
+            15.053899164553043,
+            15.05758183090775,
+            15.043216855437667,
+            15.073881776244551
+          ],
+          "validation_loss": [
+            15.773663520812988,
+            15.548996925354004,
+            15.310150146484375,
+            15.23876953125,
+            15.249807357788086,
+            15.227417945861816,
+            15.21489143371582,
+            15.239546775817871,
+            15.250815391540527,
+            15.186378479003906,
+            15.226024627685547,
+            15.204649925231934,
+            15.226320266723633,
+            15.17319107055664,
+            15.193154335021973,
+            15.23129940032959,
+            15.238253593444824,
+            15.188590049743652,
+            15.192652702331543
+          ]
+        },
+        "validation_loss": 15.17319107055664,
+        "wall_seconds": 0.913355415686965
+      }
+    ],
+    "selected_index": 0,
+    "selection_reason": "Selected lowest validation loss among successful candidates; test data was not used."
+  }
+}

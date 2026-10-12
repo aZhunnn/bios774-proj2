@@ -142,6 +142,7 @@ class Phase3AFlowTests(unittest.TestCase):
             self.assertIn("test was not used", decisions["selection"])
             self.assertIn("decision_rule", comparison)
             self.assertIn("baseline", comparison["scores"])
+            self.assertIn("selection_score", comparison["scores"]["baseline"])
 
     def test_total_cross_family_budget_is_enforced(self):
         frame = continuous_frame()

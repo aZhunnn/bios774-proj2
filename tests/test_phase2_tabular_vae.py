@@ -134,7 +134,48 @@ class Phase2TabularVaeTests(unittest.TestCase):
         self.assertGreaterEqual(result.duplicate_fraction, 0.0)
         self.assertGreaterEqual(result.unique_fraction, 0.0)
         self.assertIn("data_generation_fidelity", result.objective_metrics)
+        self.assertIn("train_scale_normalized_marginal_fidelity", result.objective_metrics)
+        self.assertIn("dependence_preservation", result.objective_metrics)
+        self.assertIn("selection_score", result.objective_metrics)
+        self.assertEqual(result.objective_metrics["data_generation_fidelity"], result.marginal_fidelity_score)
         self.assertIn("proxies", result.notes[0])
+
+    def test_selection_metric_rewards_train_scale_and_dependence(self):
+        train_real = pd.DataFrame({"x1": [0.0, 1.0, 2.0, 3.0], "x2": [0.0, 1.0, 2.0, 3.0]})
+        validation_real = pd.DataFrame({"x1": [1.0, 2.0], "x2": [1.0, 2.0]})
+        good = pd.DataFrame({"synthetic_record": [True, True], "x1": [1.0, 2.0], "x2": [1.0, 2.0]})
+        bad = pd.DataFrame({"synthetic_record": [True, True], "x1": [10.0, 11.0], "x2": [11.0, 10.0]})
+        schema = type(
+            "Schema",
+            (),
+            {
+                "continuous": ("x1", "x2"),
+                "binary": tuple(),
+                "binary_values": {},
+                "model_columns": ("x1", "x2"),
+            },
+        )()
+
+        good_result = evaluate_synthetic(
+            train_real=train_real,
+            test_real=validation_real,
+            synthetic=good,
+            schema=schema,
+            method="good",
+        )
+        bad_result = evaluate_synthetic(
+            train_real=train_real,
+            test_real=validation_real,
+            synthetic=bad,
+            schema=schema,
+            method="bad",
+        )
+
+        self.assertGreater(good_result.selection_score, bad_result.selection_score)
+        self.assertGreater(
+            good_result.train_scale_normalized_marginal_fidelity,
+            bad_result.train_scale_normalized_marginal_fidelity,
+        )
 
     def test_csv_loading_and_end_to_end_workflow(self):
         frame = phase2_frame()
@@ -156,7 +197,8 @@ class Phase2TabularVaeTests(unittest.TestCase):
             self.assertEqual(handle.target_column, "target")
             self.assertTrue(result.report_path.exists())
             self.assertTrue(result.synthetic_path.exists())
-            self.assertTrue(result.checkpoint_path.exists())
+            if result.checkpoint_path is not None:
+                self.assertTrue(result.checkpoint_path.exists())
             search = json.loads((output_dir / "candidate_search.json").read_text(encoding="utf-8"))
             self.assertEqual(len(search["vae"]["candidates"]), 2)
             self.assertIn("validation loss", search["vae"]["selection_reason"])

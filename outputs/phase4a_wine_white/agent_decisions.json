@@ -1,0 +1,72 @@
+{
+  "constraints": [
+    "max_models=2",
+    "max_epochs=20",
+    "max_wall_minutes=30",
+    "seed=2026"
+  ],
+  "feasible": true,
+  "model_limitations": {
+    "baseline": "Bootstrap resamples training rows and is non-generative.",
+    "flow": "Phase 3A flow supports continuous-only tabular features with no missing values.",
+    "vae": "Supports continuous and binary tabular features with Gaussian/Bernoulli observation assumptions."
+  },
+  "objective_decision": {
+    "action": "use_vae",
+    "constraints": [
+      "objective=data_generation",
+      "n_samples=4898",
+      "n_features=12",
+      "max_models=2",
+      "max_epochs=20",
+      "max_wall_minutes=30",
+      "seed=2026"
+    ],
+    "reasons": [
+      "Unconditional tabular data_generation is supported and budget permits VAE training."
+    ],
+    "supported_objective": true,
+    "uses_generative_model": true
+  },
+  "planner": "deterministic rules plus within-family searches and shared validation comparison; no LLM reasoning or autonomous optimization",
+  "reasons": [],
+  "selection": "Selected baseline using shared validation selection_score; held-out test was not used.",
+  "validation_comparison": {
+    "decision_rule": "Select the method with the highest validation selection_score from synthetic-vs-validation evaluation. VAE ELBO and flow NLL are used only within their own family searches.",
+    "metric_definition": "selection_score = 0.45 train-scale-normalized marginal fidelity + 0.35 dependence preservation + 0.20 legacy marginal fidelity when correlations are valid; without correlations, 0.75 normalized marginal + 0.25 legacy marginal.",
+    "metric_direction": "higher selection_score is better",
+    "sample_count": 734,
+    "scores": {
+      "baseline": {
+        "data_generation_fidelity": 0.7120288033647164,
+        "dependence_preservation": 0.966044913283156,
+        "duplicate_fraction": 0.1539509536784741,
+        "nearest_neighbor_mean": 0.0,
+        "selection_score": 0.9125376457832101,
+        "train_scale_normalized_marginal_fidelity": 0.9600359232470271
+      },
+      "flow": {
+        "data_generation_fidelity": 0.7625078131558546,
+        "dependence_preservation": 0.960810887402346,
+        "duplicate_fraction": 0.0,
+        "nearest_neighbor_mean": 1.3894101358012565,
+        "selection_score": 0.912417743245997,
+        "train_scale_normalized_marginal_fidelity": 0.941405266720011
+      },
+      "vae": {
+        "data_generation_fidelity": 0.406744168848898,
+        "dependence_preservation": 0.6321472709457345,
+        "duplicate_fraction": 0.0,
+        "nearest_neighbor_mean": 0.8544359297273372,
+        "selection_score": 0.6661846283567006,
+        "train_scale_normalized_marginal_fidelity": 0.8079649994575864
+      }
+    },
+    "seeds": {
+      "baseline": 2033,
+      "flow": 2039,
+      "vae": 2037
+    }
+  },
+  "warnings": []
+}

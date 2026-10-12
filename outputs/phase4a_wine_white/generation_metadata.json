@@ -1,0 +1,6 @@
+{
+  "method": "training_row_bootstrap_selected_by_validation",
+  "n_samples": 4898,
+  "output_path": "outputs/phase4a_wine_white/synthetic_samples.csv",
+  "seed": 2026
+}

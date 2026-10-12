@@ -30,7 +30,7 @@ def load_csv_dataset(
     roles: ColumnRoles | None = None,
 ) -> tuple[pd.DataFrame, DatasetHandle]:
     csv_path = Path(path)
-    frame = pd.read_csv(csv_path)
+    frame = pd.read_csv(csv_path, sep=None, engine="python")
     selected_roles = roles or ColumnRoles()
     missing_roles = selected_roles.modeling_exclusions().difference(frame.columns)
     if missing_roles:

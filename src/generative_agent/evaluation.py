@@ -20,6 +20,9 @@ class EvaluationResult:
     nearest_neighbor_mean: float
     nearest_neighbor_min: float
     marginal_fidelity_score: float
+    train_scale_normalized_marginal_fidelity: float
+    dependence_preservation_score: float | None
+    selection_score: float
     objective_metrics: dict[str, float]
     notes: tuple[str, ...]
 
@@ -65,6 +68,13 @@ def evaluate_synthetic(
     nn = _nearest_neighbor_distances(encoded_synth, encoded_train)
     duplicates = float(synthetic_model.duplicated().mean()) if len(synthetic_model) else 0.0
     marginal_fidelity = _marginal_fidelity_score(feature_diffs)
+    normalized_marginal = _train_scale_normalized_marginal_score(train_real, test_real, synthetic_model, schema)
+    dependence_score = None if correlation_l1 is None else float(1.0 / (1.0 + correlation_l1))
+    selection_score = _selection_score(
+        legacy_marginal=marginal_fidelity,
+        normalized_marginal=normalized_marginal,
+        dependence=dependence_score,
+    )
     return EvaluationResult(
         method=method,
         feature_differences=feature_diffs,
@@ -74,10 +84,19 @@ def evaluate_synthetic(
         nearest_neighbor_mean=float(np.mean(nn)) if len(nn) else 0.0,
         nearest_neighbor_min=float(np.min(nn)) if len(nn) else 0.0,
         marginal_fidelity_score=marginal_fidelity,
-        objective_metrics={"data_generation_fidelity": marginal_fidelity},
+        train_scale_normalized_marginal_fidelity=normalized_marginal,
+        dependence_preservation_score=dependence_score,
+        selection_score=selection_score,
+        objective_metrics={
+            "data_generation_fidelity": marginal_fidelity,
+            "train_scale_normalized_marginal_fidelity": normalized_marginal,
+            "dependence_preservation": dependence_score if dependence_score is not None else 0.0,
+            "selection_score": selection_score,
+        },
         notes=(
             "Nearest-neighbor distances are memorization proxies, not formal privacy guarantees.",
             "Bootstrap baseline is evaluated with the same metrics for fairness.",
+            "Selection score is 0.45 train-scale-normalized marginal fidelity, 0.35 dependence preservation when valid, and 0.20 legacy marginal fidelity.",
         ),
     )
 
@@ -132,3 +151,39 @@ def _marginal_fidelity_score(feature_diffs: dict[str, dict[str, float]]) -> floa
     if not errors:
         return 0.0
     return float(1.0 / (1.0 + np.mean(errors)))
+
+
+def _train_scale_normalized_marginal_score(
+    train_real: pd.DataFrame,
+    test_real: pd.DataFrame,
+    synthetic: pd.DataFrame,
+    schema: TabularVaeSchema,
+) -> float:
+    errors: list[float] = []
+    for column in schema.continuous:
+        train_std = float(train_real[column].astype(float).std(ddof=0))
+        scale = train_std if train_std > 1e-12 else 1.0
+        errors.append(abs(float(test_real[column].mean() - synthetic[column].mean())) / scale)
+        errors.append(abs(float(test_real[column].median() - synthetic[column].median())) / scale)
+        train_iqr = float(train_real[column].quantile(0.75) - train_real[column].quantile(0.25))
+        iqr_scale = train_iqr if train_iqr > 1e-12 else scale
+        test_iqr = float(test_real[column].quantile(0.75) - test_real[column].quantile(0.25))
+        synth_iqr = float(synthetic[column].quantile(0.75) - synthetic[column].quantile(0.25))
+        errors.append(abs(test_iqr - synth_iqr) / iqr_scale)
+    for column in schema.binary:
+        _low, high = schema.binary_values[column]
+        errors.append(abs(float((test_real[column] == high).mean() - (synthetic[column] == high).mean())))
+    if not errors:
+        return 0.0
+    return float(1.0 / (1.0 + np.mean(errors)))
+
+
+def _selection_score(
+    *,
+    legacy_marginal: float,
+    normalized_marginal: float,
+    dependence: float | None,
+) -> float:
+    if dependence is None:
+        return float(0.75 * normalized_marginal + 0.25 * legacy_marginal)
+    return float(0.45 * normalized_marginal + 0.35 * dependence + 0.20 * legacy_marginal)
