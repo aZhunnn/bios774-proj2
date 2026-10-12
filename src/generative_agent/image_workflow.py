@@ -7,11 +7,13 @@ from pathlib import Path
 import json
 import time
 
+import numpy as np
+
 from generative_agent.artifacts import LocalArtifactStore
 from generative_agent.data import DatasetKind
 from generative_agent.eligibility import method_eligibility, select_eligible_method
 from generative_agent.image_data import ImagePreprocessConfig, SplitNpzImageAdapter
-from generative_agent.image_evaluation import ImageEvaluationResult, evaluate_image_gan, evaluate_image_vae
+from generative_agent.image_evaluation import ImageEvaluationResult, evaluate_image_gan, evaluate_image_vae, image_metric_specification
 from generative_agent.image_gan import ImageGAN, ImageGanConfig, ImageGanTrainer
 from generative_agent.image_vae import ConvImageVAE, ImageVaeConfig, ImageVaeTrainer
 from generative_agent.objectives import ObjectiveInterpreter, ObjectiveType
@@ -38,6 +40,7 @@ def run_image_generation_workflow(
     latent_dim: int = 16,
     gan_latent_dim: int = 32,
     n_generated: int = 32,
+    repeated_generation_seeds: int = 3,
 ) -> ImageWorkflowResult:
     workflow_start = time.perf_counter()
     selected_budget = budget or ExperimentBudget(max_models=1, max_epochs=3, max_wall_minutes=30)
@@ -81,13 +84,13 @@ def run_image_generation_workflow(
             validation_dataset=bundle.validation,
             output=output,
             n_generated=n_generated,
-            seed=selected_budget.seed + 1 + trained,
+            seeds=tuple(selected_budget.seed + 100 * trained + offset + 1 for offset in range(repeated_generation_seeds)),
         )
         candidate_records[name] = record
         trained += 1
         if model is not None and evaluation is not None:
             trained_models[name] = model
-            validation_scores[name] = {"selection_score": evaluation.selection_score}
+            validation_scores[name] = {"selection_score": float(record["validation_reliability"]["selection_score_mean"])}
 
     eligibility = select_eligible_method(
         validation_scores,
@@ -97,9 +100,8 @@ def run_image_generation_workflow(
     if eligibility.selected_method is None:
         raise ValueError(eligibility.selection_reason)
     selected_score = max(validation_scores[method]["selection_score"] for method in validation_scores)
-    min_acceptable_selection_score = 0.5
-    if selected_score < min_acceptable_selection_score:
-        raise ValueError(f"No image candidate met the minimum validation evidence threshold {min_acceptable_selection_score}.")
+    adequacy_warning_threshold = 0.85
+    absolute_evidence = _absolute_evidence(candidate_records, selected_score, adequacy_warning_threshold)
     selected_name = _selected_candidate_name(eligibility.selected_method, candidate_records)
     selected_record = candidate_records[selected_name]
     selected_model = trained_models[selected_name]
@@ -118,6 +120,7 @@ def run_image_generation_workflow(
     store.save_json("preprocessing", bundle.preprocessing, kind="preprocessing")
     store.save_json("objective", {"text": objective_text, "type": objective.objective_type.value, "constraints": dict(objective.constraints)}, kind="objective")
     store.save_json("candidate_results", candidate_records, kind="candidate_results")
+    store.save_json("image_metric_specification", image_metric_specification(), kind="metric_specification")
     store.save_json("model_config", selected_record["config"], kind="model")
     store.save_json("training_history", selected_record["training"], kind="training")
     store.save_json("evaluation_results", selected_record["validation_evaluation"], kind="validation_evaluation")
@@ -128,15 +131,16 @@ def run_image_generation_workflow(
         "labels": "metadata_only_not_conditioning",
         "reconstruction_assumption": config.reconstruction_assumption,
         "selection_rule": "Train up to max_models total feasible eligible image candidates; select highest shared validation selection_score; evaluate held-out test only after selection.",
-        "selection_metric": "1 / (1 + pixel mean error + pixel std error + 0.5 gradient mean error + 0.5 gradient std error + duplicate fraction)",
-        "minimum_acceptable_selection_score": min_acceptable_selection_score,
+        "selection_metric": "1 / (1 + pixel mean error + pixel std error + 0.5 gradient mean error + 0.5 gradient std error + local patch std error + diversity error + 0.25 handcrafted feature MMD + duplicate fraction)",
+        "adequacy_warning_threshold": adequacy_warning_threshold,
+        "absolute_evidence": absolute_evidence,
         "selected_candidate": selected_name,
         "workflow_wall_seconds": workflow_wall_seconds,
         "limitations": [
             "Small image experiments are not evidence of clinically meaningful generative quality.",
             "No privacy guarantee is implemented.",
             "Image VAE and GAN are unconditional; labels are not used for conditioning.",
-            "KID/FID are not reported because no validated biomedical feature extractor is implemented.",
+            "The handcrafted feature MMD is not KID/FID and is not a validated pathology quality metric.",
         ],
     }
     store.save_json("agent_decisions", decisions, kind="decisions")
@@ -189,7 +193,7 @@ def _train_and_evaluate_candidate(
     validation_dataset,
     output: Path,
     n_generated: int,
-    seed: int,
+    seeds: tuple[int, ...],
 ) -> tuple[dict[str, object], object | None, ImageEvaluationResult | None]:
     if name == "image_vae":
         model = ConvImageVAE(config)
@@ -197,39 +201,55 @@ def _train_and_evaluate_candidate(
         training = ImageVaeTrainer().train(model, train_dataset, validation_dataset, checkpoint)
         if training.failed:
             return _failed_record(name, config, training), None, None
-        evaluation = evaluate_image_vae(
-            model=model,
-            train_dataset=train_dataset,
-            validation_dataset=validation_dataset,
-            n_generated=n_generated,
-            seed=seed,
-            grid_path=output / "image_vae_validation_grid.png",
-        )
-        return _success_record(config, training, evaluation), model, evaluation
+        evaluations = [
+            evaluate_image_vae(
+                model=model,
+                train_dataset=train_dataset,
+                validation_dataset=validation_dataset,
+                n_generated=n_generated,
+                seed=seed,
+                grid_path=output / ("image_vae_validation_grid.png" if index == 0 else f"image_vae_validation_grid_seed{index}.png"),
+            )
+            for index, seed in enumerate(seeds)
+        ]
+        return _success_record(config, training, evaluations), model, evaluations[0]
     if name == "image_gan":
         model = ImageGAN(config)
         checkpoint = output / "image_gan_checkpoint.pt"
         training = ImageGanTrainer().train(model, train_dataset, validation_dataset, checkpoint)
         if training.failed:
             return _failed_record(name, config, training), None, None
-        evaluation = evaluate_image_gan(
-            model=model,
-            train_dataset=train_dataset,
-            validation_dataset=validation_dataset,
-            n_generated=n_generated,
-            seed=seed,
-            grid_path=output / "image_gan_validation_grid.png",
-        )
-        return _success_record(config, training, evaluation), model, evaluation
+        evaluations = [
+            evaluate_image_gan(
+                model=model,
+                train_dataset=train_dataset,
+                validation_dataset=validation_dataset,
+                n_generated=n_generated,
+                seed=seed,
+                grid_path=output / ("image_gan_validation_grid.png" if index == 0 else f"image_gan_validation_grid_seed{index}.png"),
+            )
+            for index, seed in enumerate(seeds)
+        ]
+        return _success_record(config, training, evaluations), model, evaluations[0]
     raise ValueError(f"Unsupported image candidate: {name}.")
 
 
-def _success_record(config, training, evaluation: ImageEvaluationResult) -> dict[str, object]:
+def _success_record(config, training, evaluations: list[ImageEvaluationResult]) -> dict[str, object]:
+    scores = [item.selection_score for item in evaluations]
     return {
         "status": "trained",
         "config": config.to_dict(),
         "training": asdict(training),
-        "validation_evaluation": evaluation.to_dict(),
+        "validation_evaluation": evaluations[0].to_dict(),
+        "validation_repeated_evaluations": [item.to_dict() for item in evaluations],
+        "validation_reliability": {
+            "selection_score_mean": float(sum(scores) / len(scores)),
+            "selection_score_std": float(np.std(scores, ddof=0)),
+            "selection_score_min": float(min(scores)),
+            "selection_score_max": float(max(scores)),
+            "n_generation_seeds": len(scores),
+            "practical_difference_threshold": 0.01,
+        },
         "checkpoint_path": str(training.checkpoint_path),
     }
 
@@ -241,6 +261,33 @@ def _failed_record(name: str, config, training) -> dict[str, object]:
         "config": config.to_dict(),
         "training": asdict(training),
         "reason": training.failure_reason,
+    }
+
+
+def _absolute_evidence(candidate_records: dict[str, dict[str, object]], selected_score: float, warning_threshold: float) -> dict[str, object]:
+    trained = {name: record for name, record in candidate_records.items() if record.get("status") == "trained"}
+    ranked = sorted(
+        (
+            (name, float(record["validation_reliability"]["selection_score_mean"]), float(record["validation_reliability"]["selection_score_std"]))
+            for name, record in trained.items()
+        ),
+        key=lambda item: item[1],
+        reverse=True,
+    )
+    if len(ranked) >= 2:
+        margin = ranked[0][1] - ranked[1][1]
+        practical_difference = margin >= float(trained[ranked[0][0]]["validation_reliability"]["practical_difference_threshold"])
+    else:
+        margin = None
+        practical_difference = False
+    return {
+        "selected_validation_score_mean": selected_score,
+        "warning_threshold": warning_threshold,
+        "adequacy_claim": False,
+        "quality_warning": selected_score < warning_threshold,
+        "top_two_score_margin": margin,
+        "difference_practically_meaningful_by_heuristic": practical_difference,
+        "interpretation": "Ranking is relative and heuristic; no score threshold establishes clinical realism, privacy, or external-release suitability.",
     }
 
 
@@ -265,7 +312,7 @@ def _evaluate_selected_on_test(*, name: str, model, train_dataset, test_dataset,
 def _render_report(profile, config, training, validation_evaluation, test_evaluation, decisions, candidates) -> str:
     return "\n".join(
         [
-            "# Phase 5B Image Generation Report",
+            "# Phase 5C Image Evaluation and Selection Report",
             "",
             "## Dataset Profile",
             f"```json\n{json.dumps(profile, indent=2)}\n```",

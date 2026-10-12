@@ -1,0 +1,27 @@
+{
+  "duplicate_fraction": 0.0,
+  "feature_mmd": 0.3291362524032593,
+  "generation_seconds": 0.0019863336347043514,
+  "gradient_mean_abs_error": 0.011801205575466156,
+  "gradient_std_abs_error": 0.030975600704550743,
+  "local_patch_std_abs_error": 0.02271663397550583,
+  "model_name": "image_vae",
+  "nearest_neighbor_mean": 3.157261371612549,
+  "nearest_neighbor_min": 2.377669095993042,
+  "notes": [
+    "Reconstruction metrics evaluate autoencoding behavior, not unconditional generation quality.",
+    "Nearest-neighbor diagnostics are memorization proxies, not privacy guarantees.",
+    "Selection score is validation-only and combines pixel and simple gradient summary errors with a duplicate penalty; it does not use VAE ELBO or GAN discriminator loss.",
+    "The handcrafted feature MMD is not a validated pathology quality metric and is not clinically meaningful by itself.",
+    "No numeric threshold in this report establishes adequate image quality for clinical use or external release."
+  ],
+  "pairwise_distance_mean_abs_error": 0.17321030050516129,
+  "pixel_mean_abs_error": 0.07419431209564209,
+  "pixel_mean_generated": 0.5902475714683533,
+  "pixel_mean_real": 0.6644418835639954,
+  "pixel_std_abs_error": 0.12042797356843948,
+  "pixel_std_generated": 0.07852735370397568,
+  "pixel_std_real": 0.19895532727241516,
+  "reconstruction_mse": 0.025586361065506935,
+  "selection_score": 0.6692447373180194
+}

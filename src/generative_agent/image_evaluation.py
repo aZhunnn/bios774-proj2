@@ -29,6 +29,9 @@ class ImageEvaluationResult:
     pixel_std_abs_error: float
     gradient_mean_abs_error: float
     gradient_std_abs_error: float
+    local_patch_std_abs_error: float
+    pairwise_distance_mean_abs_error: float
+    feature_mmd: float
     reconstruction_mse: float | None
     pixel_mean_real: float
     pixel_mean_generated: float
@@ -42,6 +45,74 @@ class ImageEvaluationResult:
 
     def to_dict(self) -> dict[str, object]:
         return asdict(self)
+
+
+def image_metric_specification() -> dict[str, dict[str, object]]:
+    return {
+        "pixel_mean_abs_error": {
+            "definition": "|mean(generated pixels) - mean(validation pixels)|",
+            "direction": "lower is better",
+            "normalization": "pixels are expected on [0, 1]",
+            "sample_count_sensitivity": "global means stabilize quickly but can hide poor local structure",
+            "limitations": "can favor bland images if used alone",
+        },
+        "pixel_std_abs_error": {
+            "definition": "|std(generated pixels) - std(validation pixels)|",
+            "direction": "lower is better",
+            "normalization": "pixels are expected on [0, 1]",
+            "sample_count_sensitivity": "sensitive to small sample batches and class mix",
+            "limitations": "global variance does not prove realistic spatial organization",
+        },
+        "gradient_mean_abs_error": {
+            "definition": "absolute error in mean finite-difference gradient magnitude",
+            "direction": "lower is better",
+            "normalization": "computed on [0, 1] pixels",
+            "sample_count_sensitivity": "moderate; stabilizes with more images and pixels",
+            "limitations": "detects edge amount, not medically meaningful structure",
+        },
+        "gradient_std_abs_error": {
+            "definition": "absolute error in std of finite-difference gradient magnitude",
+            "direction": "lower is better",
+            "normalization": "computed on [0, 1] pixels",
+            "sample_count_sensitivity": "moderate; noisy for tiny image samples",
+            "limitations": "does not validate semantic features",
+        },
+        "local_patch_std_abs_error": {
+            "definition": "absolute error in average 4x4 patch-level pixel standard deviation",
+            "direction": "lower is better",
+            "normalization": "computed on [0, 1] pixels",
+            "sample_count_sensitivity": "sensitive to image size and local texture diversity",
+            "limitations": "penalizes overly smooth images but does not identify realistic tissue morphology",
+        },
+        "pairwise_distance_mean_abs_error": {
+            "definition": "absolute error in mean pairwise Euclidean distance between images",
+            "direction": "lower is better",
+            "normalization": "distances are divided by sqrt(number of pixels)",
+            "sample_count_sensitivity": "high for small generated batches",
+            "limitations": "measures diversity scale, not sample usefulness",
+        },
+        "feature_mmd": {
+            "definition": "RBF-kernel MMD on handcrafted image summaries: channel means/stds, gradient summaries, local patch std, and quadrant means",
+            "direction": "lower is better",
+            "normalization": "features are standardized using validation-feature mean/std",
+            "sample_count_sensitivity": "high for small batches; use repeated generation seeds",
+            "limitations": "handcrafted features are not a validated pathology quality metric",
+        },
+        "duplicate_fraction": {
+            "definition": "1 - unique rounded generated images / generated images",
+            "direction": "lower is better",
+            "normalization": "generated images rounded to 8-bit pixel values",
+            "sample_count_sensitivity": "more reliable with larger generated batches",
+            "limitations": "zero duplicates does not imply privacy",
+        },
+        "selection_score": {
+            "definition": "1 / (1 + weighted error sum) using validation-only metrics",
+            "direction": "higher is better for relative ranking",
+            "normalization": "bounded in (0, 1], but not calibrated as probability or quality acceptance",
+            "sample_count_sensitivity": "depends on generated sample count and random seed",
+            "limitations": "heuristic ranking score; no threshold establishes clinical or release quality",
+        },
+    }
 
 
 def evaluate_image_vae(
@@ -112,6 +183,9 @@ def evaluate_generated_images(
     pixel_std_real = float(real_val.std())
     gradient_real = _gradient_stats(real_val)
     gradient_generated = _gradient_stats(generated)
+    local_patch_std_abs_error = abs(_local_patch_std(real_val) - _local_patch_std(generated))
+    pairwise_distance_mean_abs_error = abs(_pairwise_distance_mean(real_val) - _pairwise_distance_mean(generated))
+    feature_mmd = _feature_mmd(real_val, generated)
     pixel_mean_abs_error = abs(pixel_mean_generated - pixel_mean_real)
     pixel_std_abs_error = abs(pixel_std_generated - pixel_std_real)
     gradient_mean_abs_error = abs(gradient_generated[0] - gradient_real[0])
@@ -121,6 +195,9 @@ def evaluate_generated_images(
         pixel_std_abs_error=pixel_std_abs_error,
         gradient_mean_abs_error=gradient_mean_abs_error,
         gradient_std_abs_error=gradient_std_abs_error,
+        local_patch_std_abs_error=local_patch_std_abs_error,
+        pairwise_distance_mean_abs_error=pairwise_distance_mean_abs_error,
+        feature_mmd=feature_mmd,
         duplicate_fraction=duplicates,
     )
     _save_grid(generated[: min(32, len(generated))], grid_path)
@@ -131,6 +208,9 @@ def evaluate_generated_images(
         pixel_std_abs_error=pixel_std_abs_error,
         gradient_mean_abs_error=gradient_mean_abs_error,
         gradient_std_abs_error=gradient_std_abs_error,
+        local_patch_std_abs_error=local_patch_std_abs_error,
+        pairwise_distance_mean_abs_error=pairwise_distance_mean_abs_error,
+        feature_mmd=feature_mmd,
         reconstruction_mse=None,
         pixel_mean_real=pixel_mean_real,
         pixel_mean_generated=pixel_mean_generated,
@@ -144,7 +224,8 @@ def evaluate_generated_images(
             "Reconstruction metrics evaluate autoencoding behavior, not unconditional generation quality.",
             "Nearest-neighbor diagnostics are memorization proxies, not privacy guarantees.",
             "Selection score is validation-only and combines pixel and simple gradient summary errors with a duplicate penalty; it does not use VAE ELBO or GAN discriminator loss.",
-            "Feature-based image metrics such as KID are not used here because no validated biomedical feature extractor is implemented.",
+            "The handcrafted feature MMD is not a validated pathology quality metric and is not clinically meaningful by itself.",
+            "No numeric threshold in this report establishes adequate image quality for clinical use or external release.",
         ),
     )
 
@@ -157,6 +238,9 @@ def _with_reconstruction(result: ImageEvaluationResult, reconstruction_mse: floa
         pixel_std_abs_error=result.pixel_std_abs_error,
         gradient_mean_abs_error=result.gradient_mean_abs_error,
         gradient_std_abs_error=result.gradient_std_abs_error,
+        local_patch_std_abs_error=result.local_patch_std_abs_error,
+        pairwise_distance_mean_abs_error=result.pairwise_distance_mean_abs_error,
+        feature_mmd=result.feature_mmd,
         reconstruction_mse=reconstruction_mse,
         pixel_mean_real=result.pixel_mean_real,
         pixel_mean_generated=result.pixel_mean_generated,
@@ -207,12 +291,70 @@ def _gradient_stats(images: torch.Tensor) -> tuple[float, float]:
     return float(magnitudes.mean()), float(magnitudes.std())
 
 
+def _local_patch_std(images: torch.Tensor, patch_size: int = 4) -> float:
+    height = images.shape[-2] - images.shape[-2] % patch_size
+    width = images.shape[-1] - images.shape[-1] % patch_size
+    cropped = images[:, :, :height, :width]
+    patches = cropped.unfold(2, patch_size, patch_size).unfold(3, patch_size, patch_size)
+    return float(patches.contiguous().view(-1, patch_size * patch_size).std(dim=1).mean())
+
+
+def _pairwise_distance_mean(images: torch.Tensor, max_images: int = 64) -> float:
+    selected = images[:max_images].reshape(min(len(images), max_images), -1)
+    if len(selected) < 2:
+        return 0.0
+    distances = torch.pdist(selected, p=2) / float(selected.shape[1] ** 0.5)
+    return float(distances.mean())
+
+
+def _image_features(images: torch.Tensor) -> torch.Tensor:
+    channel_means = images.mean(dim=(2, 3))
+    channel_stds = images.std(dim=(2, 3))
+    horizontal = (images[:, :, :, 1:] - images[:, :, :, :-1]).abs().mean(dim=(1, 2, 3), keepdim=False).unsqueeze(1)
+    vertical = (images[:, :, 1:, :] - images[:, :, :-1, :]).abs().mean(dim=(1, 2, 3), keepdim=False).unsqueeze(1)
+    patch = []
+    for image in images:
+        patch.append(_local_patch_std(image.unsqueeze(0)))
+    patch_tensor = torch.tensor(patch, dtype=images.dtype).unsqueeze(1)
+    h_mid = images.shape[-2] // 2
+    w_mid = images.shape[-1] // 2
+    quadrants = torch.stack(
+        [
+            images[:, :, :h_mid, :w_mid].mean(dim=(1, 2, 3)),
+            images[:, :, :h_mid, w_mid:].mean(dim=(1, 2, 3)),
+            images[:, :, h_mid:, :w_mid].mean(dim=(1, 2, 3)),
+            images[:, :, h_mid:, w_mid:].mean(dim=(1, 2, 3)),
+        ],
+        dim=1,
+    )
+    return torch.cat([channel_means, channel_stds, horizontal, vertical, patch_tensor, quadrants], dim=1)
+
+
+def _feature_mmd(real: torch.Tensor, generated: torch.Tensor) -> float:
+    real_features = _image_features(real)
+    generated_features = _image_features(generated)
+    mean = real_features.mean(dim=0, keepdim=True)
+    std = real_features.std(dim=0, keepdim=True).clamp_min(1e-6)
+    x = (real_features - mean) / std
+    y = (generated_features - mean) / std
+    combined = torch.cat([x, y], dim=0)
+    median_distance = torch.pdist(combined).median().clamp_min(1e-6)
+    gamma = 1.0 / (2.0 * median_distance.pow(2))
+    k_xx = torch.exp(-gamma * torch.cdist(x, x).pow(2)).mean()
+    k_yy = torch.exp(-gamma * torch.cdist(y, y).pow(2)).mean()
+    k_xy = torch.exp(-gamma * torch.cdist(x, y).pow(2)).mean()
+    return float(torch.clamp(k_xx + k_yy - 2.0 * k_xy, min=0.0))
+
+
 def _selection_score(
     *,
     pixel_mean_abs_error: float,
     pixel_std_abs_error: float,
     gradient_mean_abs_error: float,
     gradient_std_abs_error: float,
+    local_patch_std_abs_error: float,
+    pairwise_distance_mean_abs_error: float,
+    feature_mmd: float,
     duplicate_fraction: float,
 ) -> float:
     error = (
@@ -220,6 +362,9 @@ def _selection_score(
         + pixel_std_abs_error
         + 0.5 * gradient_mean_abs_error
         + 0.5 * gradient_std_abs_error
+        + local_patch_std_abs_error
+        + pairwise_distance_mean_abs_error
+        + 0.25 * feature_mmd
         + duplicate_fraction
     )
     return float(1.0 / (1.0 + error))

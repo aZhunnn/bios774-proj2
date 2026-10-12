@@ -1,0 +1,32 @@
+{
+  "best_validation_loss": 2184.8577270507812,
+  "checkpoint_path": "outputs/phase5c_pathmnist_reliable/image_vae_checkpoint.pt",
+  "device": "cpu",
+  "epochs_ran": 5,
+  "failed": false,
+  "failure_reason": null,
+  "history": {
+    "train_loss": [
+      2228.457977294922,
+      2211.7002563476562,
+      2193.2323455810547,
+      2188.9945526123047,
+      2186.745895385742
+    ],
+    "validation_loss": [
+      2221.3397216796875,
+      2198.5670776367188,
+      2189.0623168945312,
+      2186.6253051757812,
+      2184.8577270507812
+    ],
+    "validation_reconstruction": [
+      2220.3545532226562,
+      2195.6784057617188,
+      2186.6333618164062,
+      2182.897705078125,
+      2183.3090209960938
+    ]
+  },
+  "wall_seconds": 1.19178850017488
+}

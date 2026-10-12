@@ -4,10 +4,12 @@ from pathlib import Path
 
 import numpy as np
 import torch
+from torch.utils.data import TensorDataset
 
 from generative_agent.eligibility import method_eligibility
 from generative_agent.data import DatasetKind
 from generative_agent.image_data import ImagePreprocessConfig, SplitNpzImageAdapter
+from generative_agent.image_evaluation import evaluate_generated_images, image_metric_specification
 from generative_agent.image_gan import ImageGAN, ImageGanConfig, ImageGanTrainer, load_image_gan_checkpoint
 from generative_agent.image_vae import ConvImageVAE, ImageVaeConfig, ImageVaeTrainer, load_image_vae_checkpoint
 from generative_agent.image_workflow import run_image_generation_workflow
@@ -215,6 +217,70 @@ class Phase5AImageTests(unittest.TestCase):
             self.assertEqual(len(skipped), 1)
             self.assertAlmostEqual(validation["pixel_mean_real"], 32 / 255)
             self.assertAlmostEqual(test_eval["pixel_mean_real"], 224 / 255)
+
+    def test_image_evaluation_score_direction_penalizes_low_variance_blur(self):
+        real = torch.rand(12, 3, 16, 16)
+        labels = torch.zeros(12, dtype=torch.long)
+        dataset = TensorDataset(real, labels)
+        matching = real[:6].clone()
+        blurry = torch.full_like(matching, float(real.mean()))
+
+        with tempfile.TemporaryDirectory() as directory:
+            matching_eval = evaluate_generated_images(
+                model_name="matching",
+                generated=matching,
+                train_dataset=dataset,
+                validation_dataset=dataset,
+                generation_seconds=0.0,
+                grid_path=Path(directory) / "matching.png",
+            )
+            blurry_eval = evaluate_generated_images(
+                model_name="blurry",
+                generated=blurry,
+                train_dataset=dataset,
+                validation_dataset=dataset,
+                generation_seconds=0.0,
+                grid_path=Path(directory) / "blurry.png",
+            )
+
+        self.assertGreater(matching_eval.selection_score, blurry_eval.selection_score)
+        self.assertGreater(blurry_eval.local_patch_std_abs_error, matching_eval.local_patch_std_abs_error)
+        self.assertGreater(blurry_eval.pairwise_distance_mean_abs_error, matching_eval.pairwise_distance_mean_abs_error)
+
+    def test_image_metric_specification_documents_score_limitations(self):
+        spec = image_metric_specification()
+
+        self.assertIn("feature_mmd", spec)
+        self.assertIn("sample_count_sensitivity", spec["selection_score"])
+        self.assertIn("no threshold", spec["selection_score"]["limitations"])
+
+    def test_image_workflow_records_repeated_seed_reliability(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "images.npz"
+            output = Path(directory) / "artifacts"
+            write_image_npz(path, n_train=24, n_val=8, n_test=8)
+            run_image_generation_workflow(
+                npz_path=path,
+                output_dir=output,
+                objective_text="Generate synthetic images for internal testing.",
+                budget=ExperimentBudget(max_models=2, max_epochs=1, seed=8),
+                preprocess=ImagePreprocessConfig(max_train_samples=20, max_validation_samples=6, max_test_samples=6, seed=8),
+                latent_dim=4,
+                gan_latent_dim=4,
+                n_generated=4,
+                repeated_generation_seeds=2,
+            )
+
+            import json
+
+            candidates = json.loads((output / "candidate_results.json").read_text())
+            decisions = json.loads((output / "agent_decisions.json").read_text())
+            trained = [record for record in candidates.values() if record["status"] == "trained"]
+
+            self.assertEqual(len(trained), 2)
+            self.assertTrue(all(record["validation_reliability"]["n_generation_seeds"] == 2 for record in trained))
+            self.assertFalse(decisions["absolute_evidence"]["adequacy_claim"])
+            self.assertTrue((output / "image_metric_specification.json").exists())
 
 
 if __name__ == "__main__":
