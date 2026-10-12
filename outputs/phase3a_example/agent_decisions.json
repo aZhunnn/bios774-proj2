@@ -33,22 +33,25 @@
   "selection": "Selected vae using shared validation data_generation_fidelity; held-out test was not used.",
   "validation_comparison": {
     "decision_rule": "Select the method with the highest validation data_generation_fidelity from synthetic-vs-validation evaluation. VAE ELBO and flow NLL are used only within their own family searches.",
+    "metric_definition": "1 / (1 + mean absolute marginal errors across supported feature summaries)",
+    "metric_direction": "higher data_generation_fidelity is better",
+    "sample_count": 7,
     "scores": {
       "baseline": {
         "data_generation_fidelity": 0.44775650481469664,
         "duplicate_fraction": 0.0,
         "nearest_neighbor_mean": 0.0
       },
-      "flow": {
-        "data_generation_fidelity": 0.428887410646848,
-        "duplicate_fraction": 0.0,
-        "nearest_neighbor_mean": 0.8432040625418109
-      },
       "vae": {
         "data_generation_fidelity": 0.5036231654767201,
         "duplicate_fraction": 0.0,
         "nearest_neighbor_mean": 0.12958793890102063
       }
+    },
+    "seeds": {
+      "baseline": 2033,
+      "flow": 2039,
+      "vae": 2037
     }
   },
   "warnings": [

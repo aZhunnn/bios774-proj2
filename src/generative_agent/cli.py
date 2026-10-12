@@ -7,7 +7,7 @@ from pathlib import Path
 
 from generative_agent.state import ExperimentBudget
 from generative_agent.tabular_io import ColumnRoles
-from generative_agent.workflow import run_tabular_vae_workflow
+from generative_agent.workflow import run_tabular_generation_workflow
 
 
 def main() -> None:
@@ -23,7 +23,7 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=2026)
     parser.add_argument("--n-synthetic", type=int)
     args = parser.parse_args()
-    result = run_tabular_vae_workflow(
+    result = run_tabular_generation_workflow(
         csv_path=Path(args.csv_path),
         objective_text=args.objective,
         output_dir=Path(args.output_dir),

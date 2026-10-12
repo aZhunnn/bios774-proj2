@@ -7,6 +7,7 @@ This report is generated from stored workflow results for unconditional tabular 
 - Continuous features use a unit-variance Gaussian observation model after training-only standardization.
 - Binary features use a Bernoulli likelihood parameterized by decoder logits.
 - Within-family selection uses validation loss or validation likelihood only inside that family.
+- max_models is total trained generative candidates across all families; bootstrap baseline does not consume a training slot.
 - Cross-family selection uses shared validation synthetic-data fidelity; held-out test data is used only for final evaluation.
 - RealNVP flow is available only for continuous tabular features with no missing values.
 - Conditional generation, class balancing, image generation, GANs, and diffusion are not implemented.
@@ -55,7 +56,7 @@ This report is generated from stored workflow results for unconditional tabular 
         },
         "validation_loss": 3.044768810272217,
         "epochs_ran": 3,
-        "wall_seconds": 0.010637958068400621,
+        "wall_seconds": 0.03284354181960225,
         "checkpoint_path": "outputs/phase3a_example/tabular_vae_candidate_0.pt",
         "failed": false,
         "failure_reason": null,
@@ -77,41 +78,17 @@ This report is generated from stored workflow results for unconditional tabular 
     "selection_reason": "Selected lowest validation loss among successful candidates; test data was not used."
   },
   "flow": {
-    "candidates": [
-      {
-        "config": {
-          "input_dim": 2,
-          "num_layers": 4,
-          "hidden_dim": 32,
-          "learning_rate": 0.001,
-          "batch_size": 32,
-          "epochs": 3,
-          "early_stopping_patience": 3,
-          "seed": 2127,
-          "device": "cpu"
-        },
-        "validation_nll": 2.809579610824585,
-        "epochs_ran": 3,
-        "wall_seconds": 0.007296833209693432,
-        "checkpoint_path": "outputs/phase3a_example/tabular_flow_candidate_0.pt",
-        "failed": false,
-        "failure_reason": null,
-        "history": {
-          "train_nll": [
-            3.1606215238571167,
-            2.913098692893982,
-            2.501747250556946
-          ],
-          "validation_nll": [
-            2.950209856033325,
-            2.8764004707336426,
-            2.809579610824585
-          ]
-        }
-      }
-    ],
-    "selected_index": 0,
-    "selection_reason": "Selected lowest validation negative log likelihood within flow family; test data was not used."
+    "skipped": true,
+    "reason": "No remaining trained-candidate budget."
+  },
+  "budget": {
+    "semantics": "max_models is the total number of trained generative candidates across all model families. Bootstrap baseline does not consume a training slot.",
+    "max_trained_candidates": 1,
+    "trained_candidates": 1,
+    "allocation": {
+      "vae": 1,
+      "flow": 0
+    }
   }
 }
 ```
@@ -268,6 +245,14 @@ Method: tabular_vae
   "selection": "Selected vae using shared validation data_generation_fidelity; held-out test was not used.",
   "validation_comparison": {
     "decision_rule": "Select the method with the highest validation data_generation_fidelity from synthetic-vs-validation evaluation. VAE ELBO and flow NLL are used only within their own family searches.",
+    "metric_direction": "higher data_generation_fidelity is better",
+    "metric_definition": "1 / (1 + mean absolute marginal errors across supported feature summaries)",
+    "sample_count": 7,
+    "seeds": {
+      "baseline": 2033,
+      "vae": 2037,
+      "flow": 2039
+    },
     "scores": {
       "baseline": {
         "data_generation_fidelity": 0.44775650481469664,
@@ -278,11 +263,6 @@ Method: tabular_vae
         "data_generation_fidelity": 0.5036231654767201,
         "duplicate_fraction": 0.0,
         "nearest_neighbor_mean": 0.12958793890102063
-      },
-      "flow": {
-        "data_generation_fidelity": 0.428887410646848,
-        "duplicate_fraction": 0.0,
-        "nearest_neighbor_mean": 0.8432040625418109
       }
     }
   },

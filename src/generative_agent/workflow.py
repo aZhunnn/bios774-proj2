@@ -1,8 +1,8 @@
-"""End-to-end Phase 2.5 tabular VAE workflow."""
+"""End-to-end tabular synthetic-data workflow."""
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 import json
 
@@ -30,7 +30,7 @@ class WorkflowResult:
     training_failed: bool
 
 
-def run_tabular_vae_workflow(
+def run_tabular_generation_workflow(
     *,
     csv_path: str | Path,
     objective_text: str,
@@ -97,138 +97,182 @@ def run_tabular_vae_workflow(
         }
         evaluation_payload = {"selected": baseline_eval.to_dict(), "baseline": baseline_eval.to_dict()}
     else:
-        vae_configs = propose_vae_configs(
-            input_dim=train_array.shape[1],
-            continuous_dim=len(metadata.schema.continuous),
-            binary_dim=len(metadata.schema.binary),
-            n_train=len(train_array),
-            budget=selected_budget,
-        )
-        vae_search, vae_model = run_vae_search(
-            train_array=train_array,
-            validation_array=validation_array,
-            configs=vae_configs,
-            checkpoint_dir=output,
-        )
-        family_searches["vae"] = vae_search.to_dict()
-        validation_real = frame.iloc[list(manifest.indices.validation)].reset_index(drop=True)
-        validation_baseline = bootstrap_baseline(
-            train_frame[list(metadata.schema.model_columns)],
-            len(validation_real),
-            seed=selected_budget.seed + 7,
-        )
-        validation_baseline.insert(0, "synthetic_record", True)
-        validation_scores = {
-            "baseline": _validation_score(
-                train_real=train_frame,
-                validation_real=validation_real,
-                synthetic=validation_baseline,
-                schema=metadata.schema,
-                method="validation_bootstrap",
-            )
-        }
-        models = {"vae": vae_model}
-        successful = {"vae": not vae_search.selected.failed}
-        if successful["vae"]:
-            validation_vae = generate_synthetic(
-                vae_model,
-                preprocessor,
-                n_samples=len(validation_real),
-                seed=selected_budget.seed + 11,
-            )
-            validation_scores["vae"] = _validation_score(
-                train_real=train_frame,
-                validation_real=validation_real,
-                synthetic=validation_vae.samples,
-                schema=metadata.schema,
-                method="validation_tabular_vae",
-            )
-        flow_search = None
-        if len(metadata.schema.binary) == 0 and len(metadata.schema.continuous) == train_array.shape[1]:
-            flow_configs = propose_flow_configs(input_dim=train_array.shape[1], n_train=len(train_array), budget=selected_budget)
-            flow_search, flow_model = run_flow_search(
-                train_array=train_array,
-                validation_array=validation_array,
-                configs=flow_configs,
-                checkpoint_dir=output,
-            )
-            family_searches["flow"] = flow_search.to_dict()
-            models["flow"] = flow_model
-            successful["flow"] = not flow_search.selected.failed
-            if successful["flow"]:
-                validation_flow = generate_flow_synthetic(
-                    flow_model,
-                    preprocessor,
-                    n_samples=len(validation_real),
-                    seed=selected_budget.seed + 13,
-                )
-                validation_scores["flow"] = _validation_score(
-                    train_real=train_frame,
-                    validation_real=validation_real,
-                    synthetic=validation_flow.samples,
-                    schema=metadata.schema,
-                    method="validation_tabular_flow",
-                )
-        else:
-            family_searches["flow"] = {
-                "skipped": True,
-                "reason": "Normalizing flow supports continuous-only tabular features in Phase 3A.",
-            }
-        validation_comparison = {
-            "decision_rule": (
-                "Select the method with the highest validation data_generation_fidelity from synthetic-vs-validation "
-                "evaluation. VAE ELBO and flow NLL are used only within their own family searches."
-            ),
-            "scores": validation_scores,
-        }
-        selected_family = max(validation_scores, key=lambda key: validation_scores[key]["data_generation_fidelity"])
-        if selected_family == "baseline":
+        flow_eligible = len(metadata.schema.binary) == 0 and len(metadata.schema.continuous) == train_array.shape[1]
+        family_budget = _allocate_training_budget(total_candidates=selected_budget.max_models, flow_eligible=flow_eligible)
+        if family_budget["vae"] <= 0 and family_budget["flow"] <= 0:
             baseline.to_csv(synthetic_path, index=False)
             generation_metadata = {
                 "n_samples": sample_count,
                 "seed": selected_budget.seed,
-                "method": "training_row_bootstrap_selected_by_validation",
+                "method": "training_row_bootstrap_no_training_budget",
                 "output_path": str(synthetic_path),
             }
             evaluation_payload = {"selected": baseline_eval.to_dict(), "baseline": baseline_eval.to_dict()}
-            search_payload = family_searches
+            search_payload = {"budget": {"max_trained_candidates": selected_budget.max_models, "trained_candidates": 0}}
         else:
-            if selected_family == "vae":
-                selected_config = vae_search.selected.config
-                checkpoint_path = vae_search.selected.checkpoint_path
-                training_failed = vae_search.selected.failed
-                generation = generate_synthetic(
-                    vae_model,
-                    preprocessor,
-                    n_samples=sample_count,
-                    seed=selected_budget.seed + 1,
-                    output_path=synthetic_path,
-                )
-            else:
-                selected_config = flow_search.selected.config
-                checkpoint_path = flow_search.selected.checkpoint_path
-                training_failed = flow_search.selected.failed
-                generation = generate_flow_synthetic(
-                    models["flow"],
-                    preprocessor,
-                    n_samples=sample_count,
-                    seed=selected_budget.seed + 1,
-                    output_path=synthetic_path,
-                )
-            selected_eval = evaluate_synthetic(
-                train_real=train_frame,
-                test_real=test_frame,
-                synthetic=generation.samples,
-                schema=metadata.schema,
-                method=f"tabular_{selected_family}",
+            validation_real = frame.iloc[list(manifest.indices.validation)].reset_index(drop=True)
+            validation_baseline = bootstrap_baseline(
+                train_frame[list(metadata.schema.model_columns)],
+                len(validation_real),
+                seed=selected_budget.seed + 7,
             )
-            generation_metadata = generation.metadata
-            evaluation_payload = {
-                "selected": selected_eval.to_dict(),
-                selected_family: selected_eval.to_dict(),
-                "baseline": baseline_eval.to_dict(),
+            validation_baseline.insert(0, "synthetic_record", True)
+            validation_scores = {
+                "baseline": _validation_score(
+                    train_real=train_frame,
+                    validation_real=validation_real,
+                    synthetic=validation_baseline,
+                    schema=metadata.schema,
+                    method="validation_bootstrap",
+                )
             }
-            search_payload = family_searches
+            models = {}
+            trained_candidates = 0
+            vae_search = None
+            flow_search = None
+
+            if family_budget["vae"] > 0:
+                vae_configs = propose_vae_configs(
+                    input_dim=train_array.shape[1],
+                    continuous_dim=len(metadata.schema.continuous),
+                    binary_dim=len(metadata.schema.binary),
+                    n_train=len(train_array),
+                    budget=replace(selected_budget, max_models=family_budget["vae"]),
+                )
+                vae_search, vae_model = run_vae_search(
+                    train_array=train_array,
+                    validation_array=validation_array,
+                    configs=vae_configs,
+                    checkpoint_dir=output,
+                )
+                family_searches["vae"] = vae_search.to_dict()
+                trained_candidates += len(vae_search.candidates)
+                models["vae"] = vae_model
+                if not vae_search.selected.failed:
+                    validation_vae = generate_synthetic(
+                        vae_model,
+                        preprocessor,
+                        n_samples=len(validation_real),
+                        seed=selected_budget.seed + 11,
+                    )
+                    validation_scores["vae"] = _validation_score(
+                        train_real=train_frame,
+                        validation_real=validation_real,
+                        synthetic=validation_vae.samples,
+                        schema=metadata.schema,
+                        method="validation_tabular_vae",
+                    )
+            else:
+                family_searches["vae"] = {"skipped": True, "reason": "No remaining trained-candidate budget."}
+
+            if flow_eligible and family_budget["flow"] > 0:
+                flow_configs = propose_flow_configs(
+                    input_dim=train_array.shape[1],
+                    n_train=len(train_array),
+                    budget=replace(selected_budget, max_models=family_budget["flow"]),
+                )
+                flow_search, flow_model = run_flow_search(
+                    train_array=train_array,
+                    validation_array=validation_array,
+                    configs=flow_configs,
+                    checkpoint_dir=output,
+                )
+                family_searches["flow"] = flow_search.to_dict()
+                trained_candidates += len(flow_search.candidates)
+                models["flow"] = flow_model
+                if not flow_search.selected.failed:
+                    validation_flow = generate_flow_synthetic(
+                        flow_model,
+                        preprocessor,
+                        n_samples=len(validation_real),
+                        seed=selected_budget.seed + 13,
+                    )
+                    validation_scores["flow"] = _validation_score(
+                        train_real=train_frame,
+                        validation_real=validation_real,
+                        synthetic=validation_flow.samples,
+                        schema=metadata.schema,
+                        method="validation_tabular_flow",
+                    )
+            elif flow_eligible:
+                family_searches["flow"] = {"skipped": True, "reason": "No remaining trained-candidate budget."}
+            else:
+                family_searches["flow"] = {
+                    "skipped": True,
+                    "reason": "Normalizing flow supports continuous-only tabular features in Phase 3A.",
+                }
+            family_searches["budget"] = {
+                "semantics": "max_models is the total number of trained generative candidates across all model families. Bootstrap baseline does not consume a training slot.",
+                "max_trained_candidates": selected_budget.max_models,
+                "trained_candidates": trained_candidates,
+                "allocation": family_budget,
+            }
+            if trained_candidates > selected_budget.max_models:
+                raise RuntimeError("Internal budget accounting error: trained candidates exceeded max_models.")
+
+            validation_comparison = {
+                "decision_rule": (
+                    "Select the method with the highest validation data_generation_fidelity from synthetic-vs-validation "
+                    "evaluation. VAE ELBO and flow NLL are used only within their own family searches."
+                ),
+                "metric_direction": "higher data_generation_fidelity is better",
+                "metric_definition": "1 / (1 + mean absolute marginal errors across supported feature summaries)",
+                "sample_count": len(validation_real),
+                "seeds": {
+                    "baseline": selected_budget.seed + 7,
+                    "vae": selected_budget.seed + 11,
+                    "flow": selected_budget.seed + 13,
+                },
+                "scores": validation_scores,
+            }
+            selected_family = max(validation_scores, key=lambda key: validation_scores[key]["data_generation_fidelity"])
+            if selected_family == "baseline":
+                baseline.to_csv(synthetic_path, index=False)
+                generation_metadata = {
+                    "n_samples": sample_count,
+                    "seed": selected_budget.seed,
+                    "method": "training_row_bootstrap_selected_by_validation",
+                    "output_path": str(synthetic_path),
+                }
+                evaluation_payload = {"selected": baseline_eval.to_dict(), "baseline": baseline_eval.to_dict()}
+                search_payload = family_searches
+            else:
+                if selected_family == "vae":
+                    selected_config = vae_search.selected.config
+                    checkpoint_path = vae_search.selected.checkpoint_path
+                    training_failed = vae_search.selected.failed
+                    generation = generate_synthetic(
+                        models["vae"],
+                        preprocessor,
+                        n_samples=sample_count,
+                        seed=selected_budget.seed + 1,
+                        output_path=synthetic_path,
+                    )
+                else:
+                    selected_config = flow_search.selected.config
+                    checkpoint_path = flow_search.selected.checkpoint_path
+                    training_failed = flow_search.selected.failed
+                    generation = generate_flow_synthetic(
+                        models["flow"],
+                        preprocessor,
+                        n_samples=sample_count,
+                        seed=selected_budget.seed + 1,
+                        output_path=synthetic_path,
+                    )
+                selected_eval = evaluate_synthetic(
+                    train_real=train_frame,
+                    test_real=test_frame,
+                    synthetic=generation.samples,
+                    schema=metadata.schema,
+                    method=f"tabular_{selected_family}",
+                )
+                generation_metadata = generation.metadata
+                evaluation_payload = {
+                    "selected": selected_eval.to_dict(),
+                    selected_family: selected_eval.to_dict(),
+                    "baseline": baseline_eval.to_dict(),
+                }
+                search_payload = family_searches
 
     decisions = {
         "feasible": state.feasibility.feasible,
@@ -294,6 +338,7 @@ def _render_report(
             "- Continuous features use a unit-variance Gaussian observation model after training-only standardization.",
             "- Binary features use a Bernoulli likelihood parameterized by decoder logits.",
             "- Within-family selection uses validation loss or validation likelihood only inside that family.",
+            "- max_models is total trained generative candidates across all families; bootstrap baseline does not consume a training slot.",
             "- Cross-family selection uses shared validation synthetic-data fidelity; held-out test data is used only for final evaluation.",
             "- RealNVP flow is available only for continuous tabular features with no missing values.",
             "- Conditional generation, class balancing, image generation, GANs, and diffusion are not implemented.",
@@ -337,3 +382,29 @@ def _validation_score(*, train_real, validation_real, synthetic, schema, method:
         "duplicate_fraction": result.duplicate_fraction,
         "nearest_neighbor_mean": result.nearest_neighbor_mean,
     }
+
+
+def _allocate_training_budget(*, total_candidates: int, flow_eligible: bool) -> dict[str, int]:
+    remaining = total_candidates
+    allocation = {"vae": 0, "flow": 0}
+    if remaining > 0:
+        allocation["vae"] = 1
+        remaining -= 1
+    if flow_eligible and remaining > 0:
+        allocation["flow"] = 1
+        remaining -= 1
+    while remaining > 0:
+        if allocation["vae"] <= allocation["flow"]:
+            allocation["vae"] += 1
+        elif flow_eligible:
+            allocation["flow"] += 1
+        else:
+            allocation["vae"] += 1
+        remaining -= 1
+    return allocation
+
+
+def run_tabular_vae_workflow(**kwargs) -> WorkflowResult:
+    """Backward-compatible alias for the model-agnostic workflow."""
+
+    return run_tabular_generation_workflow(**kwargs)
