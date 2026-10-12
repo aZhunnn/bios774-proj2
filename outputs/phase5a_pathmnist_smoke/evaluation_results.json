@@ -1,0 +1,15 @@
+{
+  "duplicate_fraction": 0.0,
+  "generation_seconds": 0.0008316668681800365,
+  "nearest_neighbor_mean": 5.754234313964844,
+  "nearest_neighbor_min": 5.696342468261719,
+  "notes": [
+    "Reconstruction metrics evaluate autoencoding behavior, not unconditional generation quality.",
+    "Nearest-neighbor diagnostics are memorization proxies, not privacy guarantees."
+  ],
+  "pixel_mean_generated": 0.5233013033866882,
+  "pixel_mean_real": 0.6355350017547607,
+  "pixel_std_generated": 0.029617933556437492,
+  "pixel_std_real": 0.1732720285654068,
+  "reconstruction_mse": 0.041801873594522476
+}

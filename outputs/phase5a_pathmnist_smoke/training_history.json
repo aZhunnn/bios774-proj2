@@ -1,0 +1,23 @@
+{
+  "best_validation_loss": 2210.557373046875,
+  "checkpoint_path": "outputs/phase5a_pathmnist_smoke/image_vae_checkpoint.pt",
+  "device": "cpu",
+  "epochs_ran": 2,
+  "failed": false,
+  "failure_reason": null,
+  "history": {
+    "train_loss": [
+      2220.2853393554688,
+      2217.2435913085938
+    ],
+    "validation_loss": [
+      2213.208251953125,
+      2210.557373046875
+    ],
+    "validation_reconstruction": [
+      2213.189453125,
+      2210.499755859375
+    ]
+  },
+  "wall_seconds": 0.12974737491458654
+}

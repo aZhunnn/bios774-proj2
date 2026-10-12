@@ -17,6 +17,10 @@ class ModelCapability:
     objectives: tuple[ObjectiveType, ...]
     phase: int
     implemented: bool = False
+    modalities: tuple[str, ...] = ("tabular",)
+    feature_types: tuple[str, ...] = ("continuous", "binary")
+    operations: tuple[str, ...] = ("train", "generate", "evaluate")
+    computational_requirements: str = "cpu"
 
 
 class CapabilityRegistry:
@@ -59,6 +63,8 @@ def default_capabilities() -> tuple[ModelCapability, ...]:
             objectives=common_objectives,
             phase=2,
             implemented=True,
+            modalities=("tabular",),
+            feature_types=("continuous", "binary"),
         ),
         ModelCapability(
             name="tabular_flow",
@@ -68,6 +74,21 @@ def default_capabilities() -> tuple[ModelCapability, ...]:
             objectives=(ObjectiveType.DATA_GENERATION, ObjectiveType.UNCERTAINTY_QUANTIFICATION),
             phase=2,
             implemented=True,
+            modalities=("tabular",),
+            feature_types=("continuous",),
+        ),
+        ModelCapability(
+            name="image_vae",
+            family="VAE",
+            training_framework="pytorch",
+            dataset_kinds=(DatasetKind.IMAGE,),
+            objectives=(ObjectiveType.DATA_GENERATION, ObjectiveType.REPRESENTATION_LEARNING),
+            phase=5,
+            implemented=True,
+            modalities=("image",),
+            feature_types=("pixel_continuous",),
+            operations=("train", "generate", "reconstruct", "evaluate"),
+            computational_requirements="cpu_small_image",
         ),
         ModelCapability(
             name="image_diffusion",

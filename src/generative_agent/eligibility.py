@@ -12,7 +12,7 @@ from generative_agent.objectives import ObjectiveUseCase
 
 
 BOOTSTRAP_METHODS = {"baseline", "training_row_bootstrap", "validation_bootstrap"}
-VAE_METHODS = {"vae", "tabular_vae", "validation_tabular_vae"}
+VAE_METHODS = {"vae", "tabular_vae", "validation_tabular_vae", "image_vae", "validation_image_vae"}
 FLOW_METHODS = {"flow", "tabular_flow", "validation_tabular_flow"}
 
 

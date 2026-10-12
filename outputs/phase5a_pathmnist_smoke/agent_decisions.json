@@ -1,0 +1,33 @@
+{
+  "architecture": "Inspect -> Interpret -> Check Eligibility -> Plan -> Execute -> Evaluate -> Reflect -> Report",
+  "eligibility": {
+    "eligible_methods": [
+      "vae"
+    ],
+    "method_eligibility": [
+      {
+        "eligible": true,
+        "limitations": [
+          "Eligibility does not imply high fidelity or privacy protection."
+        ],
+        "method": "vae",
+        "reasons": [
+          "Method is eligible for internal testing or stress-testing under current deterministic rules."
+        ]
+      }
+    ],
+    "ranking_metric": "selection_score",
+    "rejected_methods": [],
+    "selected_method": "vae",
+    "selection_reason": "Selected highest selection_score among eligible methods; hard eligibility rules were applied before ranking.",
+    "use_case": "internal_testing"
+  },
+  "labels": "metadata_only_not_conditioning",
+  "limitations": [
+    "Smoke test uses a small subset and is not evidence of production generative quality.",
+    "No privacy guarantee is implemented.",
+    "Image VAE is unconditional; labels are not used for conditioning."
+  ],
+  "reconstruction_assumption": "gaussian_unit_variance",
+  "workflow_wall_seconds": 1.5018826248124242
+}
