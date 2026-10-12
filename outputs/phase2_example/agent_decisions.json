@@ -1,0 +1,14 @@
+{
+  "constraints": [
+    "max_models=1",
+    "max_epochs=3",
+    "max_wall_minutes=30",
+    "seed=2026"
+  ],
+  "feasible": true,
+  "planner": "deterministic MockPlanner; no LLM reasoning or autonomous optimization",
+  "reasons": [],
+  "warnings": [
+    "Small sample size may limit generative model quality."
+  ]
+}

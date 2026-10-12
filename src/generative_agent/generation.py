@@ -1,0 +1,63 @@
+"""Synthetic sample generation for trained tabular VAEs."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import torch
+
+from generative_agent.tabular_preprocessing import TabularVaePreprocessor
+from generative_agent.vae import TabularVAE
+
+
+@dataclass(frozen=True)
+class GenerationResult:
+    samples: pd.DataFrame
+    metadata: dict[str, object]
+
+
+def generate_synthetic(
+    model: TabularVAE,
+    preprocessor: TabularVaePreprocessor,
+    *,
+    n_samples: int,
+    seed: int,
+    output_path: Path | None = None,
+) -> GenerationResult:
+    if n_samples <= 0:
+        raise ValueError("n_samples must be positive.")
+    torch.manual_seed(seed)
+    device = next(model.parameters()).device
+    model.eval()
+    with torch.no_grad():
+        z = torch.randn(n_samples, model.config.latent_dim, device=device)
+        decoded = model.decode(z).detach().cpu().numpy()
+    cdim = model.config.continuous_dim
+    encoded = np.concatenate(
+        [
+            decoded[:, :cdim],
+            (1 / (1 + np.exp(-decoded[:, cdim:])) >= 0.5).astype(np.float32),
+        ],
+        axis=1,
+    )
+    if not np.isfinite(encoded).all():
+        raise ValueError("Generated encoded samples contain non-finite values.")
+    samples = preprocessor.inverse_transform(encoded)
+    samples.insert(0, "synthetic_record", True)
+    if len(samples) != n_samples:
+        raise ValueError("Generated sample count does not match request.")
+    if output_path is not None:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        samples.to_csv(output_path, index=False)
+    return GenerationResult(
+        samples=samples,
+        metadata={
+            "n_samples": n_samples,
+            "seed": seed,
+            "synthetic_record_column": "synthetic_record",
+            "output_path": str(output_path) if output_path else None,
+        },
+    )

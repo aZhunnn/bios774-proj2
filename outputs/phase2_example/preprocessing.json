@@ -1,0 +1,43 @@
+{
+  "continuous_mean": {
+    "x1": 0.22727272727272727,
+    "x2": 0.2545454545454546
+  },
+  "continuous_std": {
+    "x1": 0.6453905217926854,
+    "x2": 0.20388783174550731
+  },
+  "fitted_train_indices": [
+    1,
+    3,
+    4,
+    5,
+    7,
+    9,
+    10,
+    11,
+    12,
+    13,
+    15
+  ],
+  "missing_strategy": "reject",
+  "schema": {
+    "binary": [
+      "flag"
+    ],
+    "binary_values": {
+      "flag": [
+        0,
+        1
+      ]
+    },
+    "continuous": [
+      "x1",
+      "x2"
+    ],
+    "excluded": [
+      "id",
+      "target"
+    ]
+  }
+}

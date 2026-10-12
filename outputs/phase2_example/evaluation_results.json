@@ -1,0 +1,66 @@
+{
+  "baseline": {
+    "correlation_l1": 0.6559068650911923,
+    "duplicate_fraction": 0.0,
+    "feature_differences": {
+      "flag": {
+        "absolute_rate_difference": 0.6666666666666666,
+        "synthetic_positive_rate": 0.6666666666666666,
+        "test_positive_rate": 0.0
+      },
+      "x1": {
+        "absolute_mean_difference": 1.15,
+        "synthetic_mean": 0.3,
+        "synthetic_std": 0.6164414002968976,
+        "test_mean": -0.85,
+        "test_std": 0.15000000000000002
+      },
+      "x2": {
+        "absolute_mean_difference": 0.1583333333333333,
+        "synthetic_mean": 0.2333333333333333,
+        "synthetic_std": 0.19075871903765995,
+        "test_mean": 0.07500000000000001,
+        "test_std": 0.025
+      }
+    },
+    "method": "training_row_bootstrap",
+    "nearest_neighbor_mean": 0.1644358527333569,
+    "nearest_neighbor_min": 0.09647221898511127,
+    "notes": [
+      "Nearest-neighbor distances are memorization proxies, not formal privacy guarantees.",
+      "Bootstrap baseline is evaluated with the same metrics for fairness."
+    ]
+  },
+  "vae": {
+    "correlation_l1": 0.37112529974253594,
+    "duplicate_fraction": 0.0,
+    "feature_differences": {
+      "flag": {
+        "absolute_rate_difference": 0.0,
+        "synthetic_positive_rate": 0.0,
+        "test_positive_rate": 0.0
+      },
+      "x1": {
+        "absolute_mean_difference": 1.0613179365793863,
+        "synthetic_mean": 0.21131793657938638,
+        "synthetic_std": 0.010464838740260394,
+        "test_mean": -0.85,
+        "test_std": 0.15000000000000002
+      },
+      "x2": {
+        "absolute_mean_difference": 0.1820454527934392,
+        "synthetic_mean": 0.2570454527934392,
+        "synthetic_std": 0.00961452299338102,
+        "test_mean": 0.07500000000000001,
+        "test_std": 0.025
+      }
+    },
+    "method": "tabular_vae",
+    "nearest_neighbor_mean": 0.9898834918977643,
+    "nearest_neighbor_min": 0.6495153731889535,
+    "notes": [
+      "Nearest-neighbor distances are memorization proxies, not formal privacy guarantees.",
+      "Bootstrap baseline is evaluated with the same metrics for fairness."
+    ]
+  }
+}
