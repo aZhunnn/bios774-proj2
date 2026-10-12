@@ -1,0 +1,6 @@
+{
+  "labels": "metadata_only_not_conditioning",
+  "normalization": "unit",
+  "reconstruction_assumption": "gaussian_unit_variance",
+  "seed": 2026
+}

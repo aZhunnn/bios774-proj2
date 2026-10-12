@@ -17,12 +17,19 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 
+from generative_agent.image_gan import ImageGAN
 from generative_agent.image_vae import ConvImageVAE
 
 
 @dataclass(frozen=True)
 class ImageEvaluationResult:
-    reconstruction_mse: float
+    model_name: str
+    selection_score: float
+    pixel_mean_abs_error: float
+    pixel_std_abs_error: float
+    gradient_mean_abs_error: float
+    gradient_std_abs_error: float
+    reconstruction_mse: float | None
     pixel_mean_real: float
     pixel_mean_generated: float
     pixel_std_real: float
@@ -51,18 +58,84 @@ def evaluate_image_vae(
     start = time.perf_counter()
     generated = model.sample(n_generated, seed=seed).detach().cpu()
     generation_seconds = time.perf_counter() - start
+    common = evaluate_generated_images(
+        model_name="image_vae",
+        generated=generated,
+        train_dataset=train_dataset,
+        validation_dataset=validation_dataset,
+        generation_seconds=generation_seconds,
+        grid_path=grid_path,
+    )
+    return _with_reconstruction(common, _reconstruction_mse(model, validation_dataset))
+
+
+def evaluate_image_gan(
+    *,
+    model: ImageGAN,
+    train_dataset,
+    validation_dataset,
+    n_generated: int,
+    seed: int,
+    grid_path: Path,
+) -> ImageEvaluationResult:
+    import time
+
+    start = time.perf_counter()
+    generated = model.sample(n_generated, seed=seed).detach().cpu()
+    generation_seconds = time.perf_counter() - start
+    return evaluate_generated_images(
+        model_name="image_gan",
+        generated=generated,
+        train_dataset=train_dataset,
+        validation_dataset=validation_dataset,
+        generation_seconds=generation_seconds,
+        grid_path=grid_path,
+    )
+
+
+def evaluate_generated_images(
+    *,
+    model_name: str,
+    generated: torch.Tensor,
+    train_dataset,
+    validation_dataset,
+    generation_seconds: float,
+    grid_path: Path,
+) -> ImageEvaluationResult:
     real_train = _dataset_images(train_dataset)
     real_val = _dataset_images(validation_dataset)
-    reconstruction_mse = _reconstruction_mse(model, validation_dataset)
     duplicates = _duplicate_fraction(generated)
     nn = _nearest_neighbor(generated, real_train)
+    pixel_mean_generated = float(generated.mean())
+    pixel_std_generated = float(generated.std())
+    pixel_mean_real = float(real_val.mean())
+    pixel_std_real = float(real_val.std())
+    gradient_real = _gradient_stats(real_val)
+    gradient_generated = _gradient_stats(generated)
+    pixel_mean_abs_error = abs(pixel_mean_generated - pixel_mean_real)
+    pixel_std_abs_error = abs(pixel_std_generated - pixel_std_real)
+    gradient_mean_abs_error = abs(gradient_generated[0] - gradient_real[0])
+    gradient_std_abs_error = abs(gradient_generated[1] - gradient_real[1])
+    selection_score = _selection_score(
+        pixel_mean_abs_error=pixel_mean_abs_error,
+        pixel_std_abs_error=pixel_std_abs_error,
+        gradient_mean_abs_error=gradient_mean_abs_error,
+        gradient_std_abs_error=gradient_std_abs_error,
+        duplicate_fraction=duplicates,
+    )
     _save_grid(generated[: min(32, len(generated))], grid_path)
     return ImageEvaluationResult(
-        reconstruction_mse=reconstruction_mse,
-        pixel_mean_real=float(real_val.mean()),
-        pixel_mean_generated=float(generated.mean()),
-        pixel_std_real=float(real_val.std()),
-        pixel_std_generated=float(generated.std()),
+        model_name=model_name,
+        selection_score=selection_score,
+        pixel_mean_abs_error=pixel_mean_abs_error,
+        pixel_std_abs_error=pixel_std_abs_error,
+        gradient_mean_abs_error=gradient_mean_abs_error,
+        gradient_std_abs_error=gradient_std_abs_error,
+        reconstruction_mse=None,
+        pixel_mean_real=pixel_mean_real,
+        pixel_mean_generated=pixel_mean_generated,
+        pixel_std_real=pixel_std_real,
+        pixel_std_generated=pixel_std_generated,
         duplicate_fraction=duplicates,
         nearest_neighbor_mean=float(nn.mean()) if len(nn) else 0.0,
         nearest_neighbor_min=float(nn.min()) if len(nn) else 0.0,
@@ -70,7 +143,30 @@ def evaluate_image_vae(
         notes=(
             "Reconstruction metrics evaluate autoencoding behavior, not unconditional generation quality.",
             "Nearest-neighbor diagnostics are memorization proxies, not privacy guarantees.",
+            "Selection score is validation-only and combines pixel and simple gradient summary errors with a duplicate penalty; it does not use VAE ELBO or GAN discriminator loss.",
+            "Feature-based image metrics such as KID are not used here because no validated biomedical feature extractor is implemented.",
         ),
+    )
+
+
+def _with_reconstruction(result: ImageEvaluationResult, reconstruction_mse: float) -> ImageEvaluationResult:
+    return ImageEvaluationResult(
+        model_name=result.model_name,
+        selection_score=result.selection_score,
+        pixel_mean_abs_error=result.pixel_mean_abs_error,
+        pixel_std_abs_error=result.pixel_std_abs_error,
+        gradient_mean_abs_error=result.gradient_mean_abs_error,
+        gradient_std_abs_error=result.gradient_std_abs_error,
+        reconstruction_mse=reconstruction_mse,
+        pixel_mean_real=result.pixel_mean_real,
+        pixel_mean_generated=result.pixel_mean_generated,
+        pixel_std_real=result.pixel_std_real,
+        pixel_std_generated=result.pixel_std_generated,
+        duplicate_fraction=result.duplicate_fraction,
+        nearest_neighbor_mean=result.nearest_neighbor_mean,
+        nearest_neighbor_min=result.nearest_neighbor_min,
+        generation_seconds=result.generation_seconds,
+        notes=result.notes,
     )
 
 
@@ -102,6 +198,31 @@ def _nearest_neighbor(query: torch.Tensor, reference: torch.Tensor) -> np.ndarra
     r = reference.numpy().reshape(len(reference), -1)
     distances = np.sqrt(((q[:, None, :] - r[None, :, :]) ** 2).sum(axis=2))
     return distances.min(axis=1)
+
+
+def _gradient_stats(images: torch.Tensor) -> tuple[float, float]:
+    horizontal = images[:, :, :, 1:] - images[:, :, :, :-1]
+    vertical = images[:, :, 1:, :] - images[:, :, :-1, :]
+    magnitudes = torch.cat([horizontal.abs().flatten(), vertical.abs().flatten()])
+    return float(magnitudes.mean()), float(magnitudes.std())
+
+
+def _selection_score(
+    *,
+    pixel_mean_abs_error: float,
+    pixel_std_abs_error: float,
+    gradient_mean_abs_error: float,
+    gradient_std_abs_error: float,
+    duplicate_fraction: float,
+) -> float:
+    error = (
+        pixel_mean_abs_error
+        + pixel_std_abs_error
+        + 0.5 * gradient_mean_abs_error
+        + 0.5 * gradient_std_abs_error
+        + duplicate_fraction
+    )
+    return float(1.0 / (1.0 + error))
 
 
 def _save_grid(images: torch.Tensor, path: Path) -> None:

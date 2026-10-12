@@ -1,0 +1,23 @@
+{
+  "duplicate_fraction": 0.0,
+  "generation_seconds": 0.001129749696701765,
+  "gradient_mean_abs_error": 0.011818017810583115,
+  "gradient_std_abs_error": 0.025638718158006668,
+  "model_name": "image_vae",
+  "nearest_neighbor_mean": 4.6766676902771,
+  "nearest_neighbor_min": 4.200157165527344,
+  "notes": [
+    "Reconstruction metrics evaluate autoencoding behavior, not unconditional generation quality.",
+    "Nearest-neighbor diagnostics are memorization proxies, not privacy guarantees.",
+    "Selection score is validation-only and combines pixel and simple gradient summary errors with a duplicate penalty; it does not use VAE ELBO or GAN discriminator loss.",
+    "Feature-based image metrics such as KID are not used here because no validated biomedical feature extractor is implemented."
+  ],
+  "pixel_mean_abs_error": 0.10350865125656128,
+  "pixel_mean_generated": 0.5622861981391907,
+  "pixel_mean_real": 0.665794849395752,
+  "pixel_std_abs_error": 0.1217169314622879,
+  "pixel_std_generated": 0.04687781631946564,
+  "pixel_std_real": 0.16859474778175354,
+  "reconstruction_mse": 0.031877245754003525,
+  "selection_score": 0.8038882785289204
+}

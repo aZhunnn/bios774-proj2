@@ -1,0 +1,19 @@
+{
+  "checkpoint_path": "outputs/phase5b_pathmnist_smoke/image_gan_checkpoint.pt",
+  "device": "cpu",
+  "epochs_ran": 1,
+  "failed": false,
+  "failure_reason": null,
+  "history": {
+    "discriminator_loss": [
+      0.7125248312950134
+    ],
+    "generator_loss": [
+      0.7098513841629028
+    ],
+    "sample_std": [
+      0.027407091110944748
+    ]
+  },
+  "wall_seconds": 0.07791991718113422
+}

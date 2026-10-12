@@ -1,0 +1,23 @@
+{
+  "duplicate_fraction": 0.0,
+  "generation_seconds": 0.0006637079641222954,
+  "gradient_mean_abs_error": 0.008570708334445953,
+  "gradient_std_abs_error": 0.02316412143409252,
+  "model_name": "image_gan",
+  "nearest_neighbor_mean": 6.079408645629883,
+  "nearest_neighbor_min": 5.923733234405518,
+  "notes": [
+    "Reconstruction metrics evaluate autoencoding behavior, not unconditional generation quality.",
+    "Nearest-neighbor diagnostics are memorization proxies, not privacy guarantees.",
+    "Selection score is validation-only and combines pixel and simple gradient summary errors with a duplicate penalty; it does not use VAE ELBO or GAN discriminator loss.",
+    "Feature-based image metrics such as KID are not used here because no validated biomedical feature extractor is implemented."
+  ],
+  "pixel_mean_abs_error": 0.13251399993896484,
+  "pixel_mean_generated": 0.5092819929122925,
+  "pixel_mean_real": 0.6417959928512573,
+  "pixel_std_abs_error": 0.13458000496029854,
+  "pixel_std_generated": 0.031914036720991135,
+  "pixel_std_real": 0.16649404168128967,
+  "reconstruction_mse": null,
+  "selection_score": 0.7794466650203128
+}

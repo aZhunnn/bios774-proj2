@@ -1,0 +1,49 @@
+{
+  "architecture": "Inspect -> Interpret -> Check Eligibility -> Plan -> Execute -> Evaluate -> Reflect -> Report",
+  "eligibility": {
+    "eligible_methods": [
+      "gan",
+      "vae"
+    ],
+    "method_eligibility": [
+      {
+        "eligible": true,
+        "limitations": [
+          "Eligibility does not imply high fidelity or privacy protection."
+        ],
+        "method": "gan",
+        "reasons": [
+          "Method is eligible for internal testing or stress-testing under current deterministic rules."
+        ]
+      },
+      {
+        "eligible": true,
+        "limitations": [
+          "Eligibility does not imply high fidelity or privacy protection."
+        ],
+        "method": "vae",
+        "reasons": [
+          "Method is eligible for internal testing or stress-testing under current deterministic rules."
+        ]
+      }
+    ],
+    "ranking_metric": "selection_score",
+    "rejected_methods": [],
+    "selected_method": "vae",
+    "selection_reason": "Selected highest selection_score among eligible methods; hard eligibility rules were applied before ranking.",
+    "use_case": "internal_testing"
+  },
+  "labels": "metadata_only_not_conditioning",
+  "limitations": [
+    "Small image experiments are not evidence of clinically meaningful generative quality.",
+    "No privacy guarantee is implemented.",
+    "Image VAE and GAN are unconditional; labels are not used for conditioning.",
+    "KID/FID are not reported because no validated biomedical feature extractor is implemented."
+  ],
+  "minimum_acceptable_selection_score": 0.5,
+  "reconstruction_assumption": "gaussian_unit_variance",
+  "selected_candidate": "image_vae",
+  "selection_metric": "1 / (1 + pixel mean error + pixel std error + 0.5 gradient mean error + 0.5 gradient std error + duplicate fraction)",
+  "selection_rule": "Train up to max_models total feasible eligible image candidates; select highest shared validation selection_score; evaluate held-out test only after selection.",
+  "workflow_wall_seconds": 3.0367740839719772
+}

@@ -1,0 +1,23 @@
+{
+  "batch_size": 64,
+  "device": "cpu",
+  "discriminator_channels": [
+    16,
+    32
+  ],
+  "discriminator_learning_rate": 0.0002,
+  "epochs": 1,
+  "generator_channels": [
+    32,
+    16
+  ],
+  "generator_learning_rate": 0.0002,
+  "image_shape": [
+    28,
+    28,
+    3
+  ],
+  "latent_dim": 8,
+  "seed": 2043,
+  "stability_patience": 2
+}

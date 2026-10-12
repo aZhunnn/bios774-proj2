@@ -8,11 +8,14 @@ import json
 import time
 
 from generative_agent.artifacts import LocalArtifactStore
-from generative_agent.eligibility import select_eligible_method
+from generative_agent.data import DatasetKind
+from generative_agent.eligibility import method_eligibility, select_eligible_method
 from generative_agent.image_data import ImagePreprocessConfig, SplitNpzImageAdapter
-from generative_agent.image_evaluation import evaluate_image_vae
+from generative_agent.image_evaluation import ImageEvaluationResult, evaluate_image_gan, evaluate_image_vae
+from generative_agent.image_gan import ImageGAN, ImageGanConfig, ImageGanTrainer
 from generative_agent.image_vae import ConvImageVAE, ImageVaeConfig, ImageVaeTrainer
 from generative_agent.objectives import ObjectiveInterpreter, ObjectiveType
+from generative_agent.registry import CapabilityRegistry
 from generative_agent.state import ExperimentBudget
 
 
@@ -33,6 +36,7 @@ def run_image_generation_workflow(
     budget: ExperimentBudget | None = None,
     preprocess: ImagePreprocessConfig | None = None,
     latent_dim: int = 16,
+    gan_latent_dim: int = 32,
     n_generated: int = 32,
 ) -> ImageWorkflowResult:
     workflow_start = time.perf_counter()
@@ -49,77 +53,237 @@ def run_image_generation_workflow(
         seed=selected_budget.seed,
     )
     bundle = SplitNpzImageAdapter().load(npz_path, config=config)
+    image_shape = bundle.profile.image_shape
+    candidates = _plan_candidates(image_shape=image_shape, budget=selected_budget, latent_dim=latent_dim, gan_latent_dim=gan_latent_dim)
+    if not candidates:
+        raise ValueError("No feasible image-generation candidates fit the requested budget.")
+
+    candidate_records: dict[str, dict[str, object]] = {}
+    validation_scores: dict[str, dict[str, float]] = {}
+    trained_models: dict[str, object] = {}
+    trained = 0
+    for candidate in candidates:
+        name = candidate["name"]
+        if trained >= selected_budget.max_models:
+            candidate_records[name] = {
+                "status": "skipped",
+                "reason": f"Total trained-model budget exhausted at {selected_budget.max_models}.",
+            }
+            continue
+        eligibility = method_eligibility(name, objective.constraints["use_case"])
+        if not eligibility.eligible:
+            candidate_records[name] = {"status": "rejected", "eligibility": eligibility.to_dict()}
+            continue
+        record, model, evaluation = _train_and_evaluate_candidate(
+            name=name,
+            config=candidate["config"],
+            train_dataset=bundle.train,
+            validation_dataset=bundle.validation,
+            output=output,
+            n_generated=n_generated,
+            seed=selected_budget.seed + 1 + trained,
+        )
+        candidate_records[name] = record
+        trained += 1
+        if model is not None and evaluation is not None:
+            trained_models[name] = model
+            validation_scores[name] = {"selection_score": evaluation.selection_score}
+
     eligibility = select_eligible_method(
-        {"image_vae": {"selection_score": 0.0}},
+        validation_scores,
         use_case=objective.constraints["use_case"],
         ranking_metric="selection_score",
     )
     if eligibility.selected_method is None:
         raise ValueError(eligibility.selection_reason)
-    image_shape = bundle.profile.image_shape
-    model_config = ImageVaeConfig(
-        image_shape=image_shape,
-        latent_dim=latent_dim,
-        epochs=selected_budget.max_epochs,
-        batch_size=64,
-        seed=selected_budget.seed,
-        reconstruction_assumption=config.reconstruction_assumption,
-    )
-    model = ConvImageVAE(model_config)
-    checkpoint = output / "image_vae_checkpoint.pt"
-    training = ImageVaeTrainer().train(model, bundle.train, bundle.validation, checkpoint)
-    if training.failed:
-        raise RuntimeError(f"Image VAE training failed: {training.failure_reason}")
-    grid_path = output / "generated_grid.png"
-    evaluation = evaluate_image_vae(
-        model=model,
+    selected_score = max(validation_scores[method]["selection_score"] for method in validation_scores)
+    min_acceptable_selection_score = 0.5
+    if selected_score < min_acceptable_selection_score:
+        raise ValueError(f"No image candidate met the minimum validation evidence threshold {min_acceptable_selection_score}.")
+    selected_name = _selected_candidate_name(eligibility.selected_method, candidate_records)
+    selected_record = candidate_records[selected_name]
+    selected_model = trained_models[selected_name]
+    final_grid_path = output / f"{selected_name}_test_grid.png"
+    final_test_evaluation = _evaluate_selected_on_test(
+        name=selected_name,
+        model=selected_model,
         train_dataset=bundle.train,
-        validation_dataset=bundle.validation,
+        test_dataset=bundle.test,
         n_generated=n_generated,
-        seed=selected_budget.seed + 1,
-        grid_path=grid_path,
+        seed=selected_budget.seed + 1000,
+        grid_path=final_grid_path,
     )
     workflow_wall_seconds = time.perf_counter() - workflow_start
     store.save_json("dataset_profile", bundle.profile.to_dict(), kind="profile")
     store.save_json("preprocessing", bundle.preprocessing, kind="preprocessing")
     store.save_json("objective", {"text": objective_text, "type": objective.objective_type.value, "constraints": dict(objective.constraints)}, kind="objective")
-    store.save_json("model_config", model_config.to_dict(), kind="model")
-    store.save_json("training_history", asdict(training), kind="training")
-    store.save_json("evaluation_results", evaluation.to_dict(), kind="evaluation")
+    store.save_json("candidate_results", candidate_records, kind="candidate_results")
+    store.save_json("model_config", selected_record["config"], kind="model")
+    store.save_json("training_history", selected_record["training"], kind="training")
+    store.save_json("evaluation_results", selected_record["validation_evaluation"], kind="validation_evaluation")
+    store.save_json("final_test_evaluation", final_test_evaluation.to_dict(), kind="test_evaluation")
     decisions = {
         "architecture": "Inspect -> Interpret -> Check Eligibility -> Plan -> Execute -> Evaluate -> Reflect -> Report",
         "eligibility": eligibility.to_dict(),
         "labels": "metadata_only_not_conditioning",
         "reconstruction_assumption": config.reconstruction_assumption,
+        "selection_rule": "Train up to max_models total feasible eligible image candidates; select highest shared validation selection_score; evaluate held-out test only after selection.",
+        "selection_metric": "1 / (1 + pixel mean error + pixel std error + 0.5 gradient mean error + 0.5 gradient std error + duplicate fraction)",
+        "minimum_acceptable_selection_score": min_acceptable_selection_score,
+        "selected_candidate": selected_name,
         "workflow_wall_seconds": workflow_wall_seconds,
         "limitations": [
-            "Smoke test uses a small subset and is not evidence of production generative quality.",
+            "Small image experiments are not evidence of clinically meaningful generative quality.",
             "No privacy guarantee is implemented.",
-            "Image VAE is unconditional; labels are not used for conditioning.",
+            "Image VAE and GAN are unconditional; labels are not used for conditioning.",
+            "KID/FID are not reported because no validated biomedical feature extractor is implemented.",
         ],
     }
     store.save_json("agent_decisions", decisions, kind="decisions")
     report = output / "final_report.md"
-    report.write_text(_render_report(bundle.profile.to_dict(), model_config.to_dict(), asdict(training), evaluation.to_dict(), decisions), encoding="utf-8")
-    return ImageWorkflowResult(output, report, checkpoint, grid_path, training.failed)
+    report.write_text(_render_report(bundle.profile.to_dict(), selected_record["config"], selected_record["training"], selected_record["validation_evaluation"], final_test_evaluation.to_dict(), decisions, candidate_records), encoding="utf-8")
+    return ImageWorkflowResult(output, report, Path(str(selected_record["checkpoint_path"])), final_grid_path, False)
 
 
-def _render_report(profile, config, training, evaluation, decisions) -> str:
+def _plan_candidates(*, image_shape: tuple[int, int, int], budget: ExperimentBudget, latent_dim: int, gan_latent_dim: int) -> list[dict[str, object]]:
+    registry = CapabilityRegistry()
+    capabilities = registry.candidates(DatasetKind.IMAGE, ObjectiveType.DATA_GENERATION, implemented_only=True)
+    planned: list[dict[str, object]] = []
+    for capability in capabilities:
+        if capability.name == "image_vae":
+            planned.append(
+                {
+                    "name": "image_vae",
+                    "reason": "VAE supports unconditional small-image generation and reconstruction diagnostics.",
+                    "config": ImageVaeConfig(
+                        image_shape=image_shape,
+                        latent_dim=latent_dim,
+                        epochs=budget.max_epochs,
+                        batch_size=64,
+                        seed=budget.seed,
+                    ),
+                }
+            )
+        elif capability.name == "image_gan":
+            planned.append(
+                {
+                    "name": "image_gan",
+                    "reason": "GAN supports unconditional small-image generation with adversarial training.",
+                    "config": ImageGanConfig(
+                        image_shape=image_shape,
+                        latent_dim=gan_latent_dim,
+                        epochs=budget.max_epochs,
+                        batch_size=64,
+                        seed=budget.seed + 17,
+                    ),
+                }
+            )
+    return planned
+
+
+def _train_and_evaluate_candidate(
+    *,
+    name: str,
+    config,
+    train_dataset,
+    validation_dataset,
+    output: Path,
+    n_generated: int,
+    seed: int,
+) -> tuple[dict[str, object], object | None, ImageEvaluationResult | None]:
+    if name == "image_vae":
+        model = ConvImageVAE(config)
+        checkpoint = output / "image_vae_checkpoint.pt"
+        training = ImageVaeTrainer().train(model, train_dataset, validation_dataset, checkpoint)
+        if training.failed:
+            return _failed_record(name, config, training), None, None
+        evaluation = evaluate_image_vae(
+            model=model,
+            train_dataset=train_dataset,
+            validation_dataset=validation_dataset,
+            n_generated=n_generated,
+            seed=seed,
+            grid_path=output / "image_vae_validation_grid.png",
+        )
+        return _success_record(config, training, evaluation), model, evaluation
+    if name == "image_gan":
+        model = ImageGAN(config)
+        checkpoint = output / "image_gan_checkpoint.pt"
+        training = ImageGanTrainer().train(model, train_dataset, validation_dataset, checkpoint)
+        if training.failed:
+            return _failed_record(name, config, training), None, None
+        evaluation = evaluate_image_gan(
+            model=model,
+            train_dataset=train_dataset,
+            validation_dataset=validation_dataset,
+            n_generated=n_generated,
+            seed=seed,
+            grid_path=output / "image_gan_validation_grid.png",
+        )
+        return _success_record(config, training, evaluation), model, evaluation
+    raise ValueError(f"Unsupported image candidate: {name}.")
+
+
+def _success_record(config, training, evaluation: ImageEvaluationResult) -> dict[str, object]:
+    return {
+        "status": "trained",
+        "config": config.to_dict(),
+        "training": asdict(training),
+        "validation_evaluation": evaluation.to_dict(),
+        "checkpoint_path": str(training.checkpoint_path),
+    }
+
+
+def _failed_record(name: str, config, training) -> dict[str, object]:
+    return {
+        "status": "failed",
+        "name": name,
+        "config": config.to_dict(),
+        "training": asdict(training),
+        "reason": training.failure_reason,
+    }
+
+
+def _selected_candidate_name(selected_method: str, candidate_records: dict[str, dict[str, object]]) -> str:
+    if selected_method == "vae" and "image_vae" in candidate_records:
+        return "image_vae"
+    if selected_method == "gan" and "image_gan" in candidate_records:
+        return "image_gan"
+    if selected_method in candidate_records:
+        return selected_method
+    raise ValueError(f"Selected method {selected_method} does not match trained image candidates.")
+
+
+def _evaluate_selected_on_test(*, name: str, model, train_dataset, test_dataset, n_generated: int, seed: int, grid_path: Path) -> ImageEvaluationResult:
+    if name == "image_vae":
+        return evaluate_image_vae(model=model, train_dataset=train_dataset, validation_dataset=test_dataset, n_generated=n_generated, seed=seed, grid_path=grid_path)
+    if name == "image_gan":
+        return evaluate_image_gan(model=model, train_dataset=train_dataset, validation_dataset=test_dataset, n_generated=n_generated, seed=seed, grid_path=grid_path)
+    raise ValueError(f"Unsupported selected image model: {name}.")
+
+
+def _render_report(profile, config, training, validation_evaluation, test_evaluation, decisions, candidates) -> str:
     return "\n".join(
         [
-            "# Phase 5A Image VAE Smoke Report",
+            "# Phase 5B Image Generation Report",
             "",
             "## Dataset Profile",
             f"```json\n{json.dumps(profile, indent=2)}\n```",
             "",
-            "## Model Configuration",
+            "## Selected Model Configuration",
             f"```json\n{json.dumps(config, indent=2)}\n```",
             "",
-            "## Training",
+            "## Selected Model Training",
             f"```json\n{json.dumps(training, indent=2, default=str)}\n```",
             "",
-            "## Evaluation",
-            f"```json\n{json.dumps(evaluation, indent=2)}\n```",
+            "## Validation Evaluation",
+            f"```json\n{json.dumps(validation_evaluation, indent=2)}\n```",
+            "",
+            "## Held-Out Test Evaluation",
+            f"```json\n{json.dumps(test_evaluation, indent=2)}\n```",
+            "",
+            "## Candidate Results",
+            f"```json\n{json.dumps(candidates, indent=2, default=str)}\n```",
             "",
             "## Agent Decisions",
             f"```json\n{json.dumps(decisions, indent=2)}\n```",
