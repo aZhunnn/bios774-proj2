@@ -10,7 +10,9 @@ from generative_agent.agent import AgentFoundation
 from generative_agent.artifacts import LocalArtifactStore
 from generative_agent.decisioning import DecisionAction, DeterministicDecisionEngine
 from generative_agent.evaluation import bootstrap_baseline, evaluate_synthetic
-from generative_agent.generation import generate_synthetic
+from generative_agent.flow import FlowConfig
+from generative_agent.flow_search import propose_flow_configs, run_flow_search
+from generative_agent.generation import generate_flow_synthetic, generate_synthetic
 from generative_agent.search import propose_vae_configs, run_vae_search
 from generative_agent.splitting import DatasetSplitter, SplitConfig
 from generative_agent.state import ExperimentBudget
@@ -77,10 +79,13 @@ def run_tabular_vae_workflow(
         method="training_row_bootstrap",
     )
 
-    selected_config: VaeConfig | None = None
+    selected_config: VaeConfig | FlowConfig | None = None
     checkpoint_path: Path | None = None
     training_failed = False
     search_payload: dict[str, object] | None = None
+    family_searches: dict[str, object] = {}
+    validation_comparison: dict[str, object] = {}
+    selected_family = "baseline"
 
     if decision.action is DecisionAction.USE_BASELINE:
         baseline.to_csv(synthetic_path, index=False)
@@ -92,53 +97,138 @@ def run_tabular_vae_workflow(
         }
         evaluation_payload = {"selected": baseline_eval.to_dict(), "baseline": baseline_eval.to_dict()}
     else:
-        configs = propose_vae_configs(
+        vae_configs = propose_vae_configs(
             input_dim=train_array.shape[1],
             continuous_dim=len(metadata.schema.continuous),
             binary_dim=len(metadata.schema.binary),
             n_train=len(train_array),
             budget=selected_budget,
         )
-        search, model = run_vae_search(
+        vae_search, vae_model = run_vae_search(
             train_array=train_array,
             validation_array=validation_array,
-            configs=configs,
+            configs=vae_configs,
             checkpoint_dir=output,
         )
-        search_payload = search.to_dict()
-        selected_config = search.selected.config
-        checkpoint_path = search.selected.checkpoint_path
-        training_failed = search.selected.failed
-        if training_failed:
+        family_searches["vae"] = vae_search.to_dict()
+        validation_real = frame.iloc[list(manifest.indices.validation)].reset_index(drop=True)
+        validation_baseline = bootstrap_baseline(
+            train_frame[list(metadata.schema.model_columns)],
+            len(validation_real),
+            seed=selected_budget.seed + 7,
+        )
+        validation_baseline.insert(0, "synthetic_record", True)
+        validation_scores = {
+            "baseline": _validation_score(
+                train_real=train_frame,
+                validation_real=validation_real,
+                synthetic=validation_baseline,
+                schema=metadata.schema,
+                method="validation_bootstrap",
+            )
+        }
+        models = {"vae": vae_model}
+        successful = {"vae": not vae_search.selected.failed}
+        if successful["vae"]:
+            validation_vae = generate_synthetic(
+                vae_model,
+                preprocessor,
+                n_samples=len(validation_real),
+                seed=selected_budget.seed + 11,
+            )
+            validation_scores["vae"] = _validation_score(
+                train_real=train_frame,
+                validation_real=validation_real,
+                synthetic=validation_vae.samples,
+                schema=metadata.schema,
+                method="validation_tabular_vae",
+            )
+        flow_search = None
+        if len(metadata.schema.binary) == 0 and len(metadata.schema.continuous) == train_array.shape[1]:
+            flow_configs = propose_flow_configs(input_dim=train_array.shape[1], n_train=len(train_array), budget=selected_budget)
+            flow_search, flow_model = run_flow_search(
+                train_array=train_array,
+                validation_array=validation_array,
+                configs=flow_configs,
+                checkpoint_dir=output,
+            )
+            family_searches["flow"] = flow_search.to_dict()
+            models["flow"] = flow_model
+            successful["flow"] = not flow_search.selected.failed
+            if successful["flow"]:
+                validation_flow = generate_flow_synthetic(
+                    flow_model,
+                    preprocessor,
+                    n_samples=len(validation_real),
+                    seed=selected_budget.seed + 13,
+                )
+                validation_scores["flow"] = _validation_score(
+                    train_real=train_frame,
+                    validation_real=validation_real,
+                    synthetic=validation_flow.samples,
+                    schema=metadata.schema,
+                    method="validation_tabular_flow",
+                )
+        else:
+            family_searches["flow"] = {
+                "skipped": True,
+                "reason": "Normalizing flow supports continuous-only tabular features in Phase 3A.",
+            }
+        validation_comparison = {
+            "decision_rule": (
+                "Select the method with the highest validation data_generation_fidelity from synthetic-vs-validation "
+                "evaluation. VAE ELBO and flow NLL are used only within their own family searches."
+            ),
+            "scores": validation_scores,
+        }
+        selected_family = max(validation_scores, key=lambda key: validation_scores[key]["data_generation_fidelity"])
+        if selected_family == "baseline":
             baseline.to_csv(synthetic_path, index=False)
             generation_metadata = {
                 "n_samples": sample_count,
                 "seed": selected_budget.seed,
-                "method": "training_row_bootstrap_after_vae_failure",
+                "method": "training_row_bootstrap_selected_by_validation",
                 "output_path": str(synthetic_path),
             }
             evaluation_payload = {"selected": baseline_eval.to_dict(), "baseline": baseline_eval.to_dict()}
+            search_payload = family_searches
         else:
-            generation = generate_synthetic(
-                model,
-                preprocessor,
-                n_samples=sample_count,
-                seed=selected_budget.seed + 1,
-                output_path=synthetic_path,
-            )
-            vae_eval = evaluate_synthetic(
+            if selected_family == "vae":
+                selected_config = vae_search.selected.config
+                checkpoint_path = vae_search.selected.checkpoint_path
+                training_failed = vae_search.selected.failed
+                generation = generate_synthetic(
+                    vae_model,
+                    preprocessor,
+                    n_samples=sample_count,
+                    seed=selected_budget.seed + 1,
+                    output_path=synthetic_path,
+                )
+            else:
+                selected_config = flow_search.selected.config
+                checkpoint_path = flow_search.selected.checkpoint_path
+                training_failed = flow_search.selected.failed
+                generation = generate_flow_synthetic(
+                    models["flow"],
+                    preprocessor,
+                    n_samples=sample_count,
+                    seed=selected_budget.seed + 1,
+                    output_path=synthetic_path,
+                )
+            selected_eval = evaluate_synthetic(
                 train_real=train_frame,
                 test_real=test_frame,
                 synthetic=generation.samples,
                 schema=metadata.schema,
-                method="tabular_vae",
+                method=f"tabular_{selected_family}",
             )
             generation_metadata = generation.metadata
             evaluation_payload = {
-                "selected": vae_eval.to_dict(),
-                "vae": vae_eval.to_dict(),
+                "selected": selected_eval.to_dict(),
+                selected_family: selected_eval.to_dict(),
                 "baseline": baseline_eval.to_dict(),
             }
+            search_payload = family_searches
 
     decisions = {
         "feasible": state.feasibility.feasible,
@@ -146,8 +236,18 @@ def run_tabular_vae_workflow(
         "warnings": state.feasibility.warnings,
         "constraints": state.feasibility.constraints,
         "objective_decision": decision.to_dict(),
-        "selection": search_payload["selection_reason"] if search_payload else "Baseline selected before VAE training.",
-        "planner": "deterministic rules plus validation-only candidate search; no LLM reasoning or autonomous optimization",
+        "selection": (
+            f"Selected {selected_family} using shared validation data_generation_fidelity; held-out test was not used."
+            if validation_comparison
+            else "Baseline selected before generative training."
+        ),
+        "validation_comparison": validation_comparison,
+        "model_limitations": {
+            "vae": "Supports continuous and binary tabular features with Gaussian/Bernoulli observation assumptions.",
+            "flow": "Phase 3A flow supports continuous-only tabular features with no missing values.",
+            "baseline": "Bootstrap resamples training rows and is non-generative.",
+        },
+        "planner": "deterministic rules plus within-family searches and shared validation comparison; no LLM reasoning or autonomous optimization",
     }
 
     store.save_json("dataset_profile", asdict(state.profile), kind="profile")
@@ -157,7 +257,7 @@ def run_tabular_vae_workflow(
     store.save_json("model_config", selected_config.to_dict() if selected_config else {"method": "baseline"}, kind="model")
     if search_payload is not None:
         store.save_json("candidate_search", search_payload, kind="search")
-        store.save_json("training_history", search.selected.history, kind="training")
+        store.save_json("validation_comparison", validation_comparison, kind="selection")
     store.save_json("generation_metadata", generation_metadata, kind="generation")
     store.save_json("evaluation_results", evaluation_payload, kind="evaluation")
     store.save_json("agent_decisions", decisions, kind="decisions")
@@ -193,8 +293,10 @@ def _render_report(
             "## Modeling Assumptions",
             "- Continuous features use a unit-variance Gaussian observation model after training-only standardization.",
             "- Binary features use a Bernoulli likelihood parameterized by decoder logits.",
-            "- Candidate selection uses validation loss only; held-out test data is used only for final evaluation.",
-            "- Conditional generation, class balancing, image generation, and non-VAE model families are not implemented.",
+            "- Within-family selection uses validation loss or validation likelihood only inside that family.",
+            "- Cross-family selection uses shared validation synthetic-data fidelity; held-out test data is used only for final evaluation.",
+            "- RealNVP flow is available only for continuous tabular features with no missing values.",
+            "- Conditional generation, class balancing, image generation, GANs, and diffusion are not implemented.",
             "",
             "## Selected Configuration",
             f"```json\n{json.dumps(config.to_dict() if config else {'method': 'training_row_bootstrap'}, indent=2)}\n```",
@@ -216,6 +318,22 @@ def _render_report(
             "- Nearest-neighbor diagnostics are proxies, not privacy guarantees.",
             "- The decision layer is deterministic and does not perform LLM-based reasoning.",
             "- No downstream predictive utility is reported unless a separate valid protocol is implemented.",
+            "- Cross-family validation scores are finite-sample heuristics, not statistical uncertainty estimates.",
             "",
         ]
     )
+
+
+def _validation_score(*, train_real, validation_real, synthetic, schema, method: str) -> dict[str, float]:
+    result = evaluate_synthetic(
+        train_real=train_real,
+        test_real=validation_real,
+        synthetic=synthetic,
+        schema=schema,
+        method=method,
+    )
+    return {
+        "data_generation_fidelity": result.objective_metrics["data_generation_fidelity"],
+        "duplicate_fraction": result.duplicate_fraction,
+        "nearest_neighbor_mean": result.nearest_neighbor_mean,
+    }

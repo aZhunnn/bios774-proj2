@@ -1,0 +1,110 @@
+{
+  "baseline": {
+    "correlation_l1": 0.001141278472064855,
+    "duplicate_fraction": 0.125,
+    "feature_differences": {
+      "x1": {
+        "absolute_mean_difference": 0.3936170212765957,
+        "absolute_median_difference": 0.6382978723404255,
+        "iqr_difference": 0.08510638297872353,
+        "synthetic_mean": -0.3085106382978723,
+        "synthetic_std": 1.2460439889721386,
+        "test_mean": 0.08510638297872342,
+        "test_std": 1.2914034813185973
+      },
+      "x2": {
+        "absolute_mean_difference": 0.37633329311376934,
+        "absolute_median_difference": 0.91497824370811,
+        "iqr_difference": 0.1042196745538706,
+        "synthetic_mean": -0.32699009644217997,
+        "synthetic_std": 1.471038642854338,
+        "test_mean": 0.04934319667158937,
+        "test_std": 1.4858811704197328
+      }
+    },
+    "marginal_fidelity_score": 0.7048414689340465,
+    "method": "training_row_bootstrap",
+    "nearest_neighbor_mean": 0.0,
+    "nearest_neighbor_min": 0.0,
+    "notes": [
+      "Nearest-neighbor distances are memorization proxies, not formal privacy guarantees.",
+      "Bootstrap baseline is evaluated with the same metrics for fairness."
+    ],
+    "objective_metrics": {
+      "data_generation_fidelity": 0.7048414689340465
+    },
+    "unique_fraction": 0.875
+  },
+  "selected": {
+    "correlation_l1": 0.8318251427540302,
+    "duplicate_fraction": 0.0,
+    "feature_differences": {
+      "x1": {
+        "absolute_mean_difference": 0.10087545858101643,
+        "absolute_median_difference": 0.06842008233070362,
+        "iqr_difference": 2.273881861345565,
+        "synthetic_mean": -0.015769075602293015,
+        "synthetic_std": 0.21387246196409807,
+        "test_mean": 0.08510638297872342,
+        "test_std": 1.2914034813185973
+      },
+      "x2": {
+        "absolute_mean_difference": 0.08679682574807024,
+        "absolute_median_difference": 0.06935511529445632,
+        "iqr_difference": 3.0329482456360393,
+        "synthetic_mean": -0.037453629076480865,
+        "synthetic_std": 0.3548020283668253,
+        "test_mean": 0.04934319667158937,
+        "test_std": 1.4858811704197328
+      }
+    },
+    "marginal_fidelity_score": 0.5158061225865995,
+    "method": "tabular_vae",
+    "nearest_neighbor_mean": 0.21956683436490565,
+    "nearest_neighbor_min": 0.08332949311577867,
+    "notes": [
+      "Nearest-neighbor distances are memorization proxies, not formal privacy guarantees.",
+      "Bootstrap baseline is evaluated with the same metrics for fairness."
+    ],
+    "objective_metrics": {
+      "data_generation_fidelity": 0.5158061225865995
+    },
+    "unique_fraction": 1.0
+  },
+  "vae": {
+    "correlation_l1": 0.8318251427540302,
+    "duplicate_fraction": 0.0,
+    "feature_differences": {
+      "x1": {
+        "absolute_mean_difference": 0.10087545858101643,
+        "absolute_median_difference": 0.06842008233070362,
+        "iqr_difference": 2.273881861345565,
+        "synthetic_mean": -0.015769075602293015,
+        "synthetic_std": 0.21387246196409807,
+        "test_mean": 0.08510638297872342,
+        "test_std": 1.2914034813185973
+      },
+      "x2": {
+        "absolute_mean_difference": 0.08679682574807024,
+        "absolute_median_difference": 0.06935511529445632,
+        "iqr_difference": 3.0329482456360393,
+        "synthetic_mean": -0.037453629076480865,
+        "synthetic_std": 0.3548020283668253,
+        "test_mean": 0.04934319667158937,
+        "test_std": 1.4858811704197328
+      }
+    },
+    "marginal_fidelity_score": 0.5158061225865995,
+    "method": "tabular_vae",
+    "nearest_neighbor_mean": 0.21956683436490565,
+    "nearest_neighbor_min": 0.08332949311577867,
+    "notes": [
+      "Nearest-neighbor distances are memorization proxies, not formal privacy guarantees.",
+      "Bootstrap baseline is evaluated with the same metrics for fairness."
+    ],
+    "objective_metrics": {
+      "data_generation_fidelity": 0.5158061225865995
+    },
+    "unique_fraction": 1.0
+  }
+}

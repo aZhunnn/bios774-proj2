@@ -101,7 +101,7 @@ class Phase1FoundationTests(unittest.TestCase):
         self.assertTrue(candidates)
         self.assertTrue(all(candidate.training_framework == "pytorch" for candidate in candidates))
         self.assertTrue(any(candidate.name == "tabular_vae" and candidate.implemented for candidate in candidates))
-        self.assertTrue(any(candidate.name == "tabular_flow" and not candidate.implemented for candidate in candidates))
+        self.assertTrue(any(candidate.name == "tabular_flow" and candidate.implemented for candidate in candidates))
 
     def test_feasibility_is_deterministic(self):
         dataset = DatasetHandle.from_rows("toy", toy_rows(), target_column="label")

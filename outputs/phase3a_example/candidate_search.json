@@ -1,0 +1,81 @@
+{
+  "flow": {
+    "candidates": [
+      {
+        "checkpoint_path": "outputs/phase3a_example/tabular_flow_candidate_0.pt",
+        "config": {
+          "batch_size": 32,
+          "device": "cpu",
+          "early_stopping_patience": 3,
+          "epochs": 3,
+          "hidden_dim": 32,
+          "input_dim": 2,
+          "learning_rate": 0.001,
+          "num_layers": 4,
+          "seed": 2127
+        },
+        "epochs_ran": 3,
+        "failed": false,
+        "failure_reason": null,
+        "history": {
+          "train_nll": [
+            3.1606215238571167,
+            2.913098692893982,
+            2.501747250556946
+          ],
+          "validation_nll": [
+            2.950209856033325,
+            2.8764004707336426,
+            2.809579610824585
+          ]
+        },
+        "validation_nll": 2.809579610824585,
+        "wall_seconds": 0.007296833209693432
+      }
+    ],
+    "selected_index": 0,
+    "selection_reason": "Selected lowest validation negative log likelihood within flow family; test data was not used."
+  },
+  "vae": {
+    "candidates": [
+      {
+        "checkpoint_path": "outputs/phase3a_example/tabular_vae_candidate_0.pt",
+        "config": {
+          "batch_size": 32,
+          "binary_dim": 0,
+          "continuous_dim": 2,
+          "device": "cpu",
+          "early_stopping_patience": 3,
+          "epochs": 3,
+          "hidden_dims": [
+            16
+          ],
+          "input_dim": 2,
+          "kl_weight": 1.0,
+          "latent_dim": 2,
+          "learning_rate": 0.001,
+          "seed": 2026
+        },
+        "epochs_ran": 3,
+        "failed": false,
+        "failure_reason": null,
+        "history": {
+          "train_loss": [
+            3.3121891021728516,
+            2.5935033559799194,
+            3.3223615884780884
+          ],
+          "validation_loss": [
+            3.044768810272217,
+            3.0482521057128906,
+            3.066857099533081
+          ]
+        },
+        "validation_loss": 3.044768810272217,
+        "wall_seconds": 0.010637958068400621
+      }
+    ],
+    "selected_index": 0,
+    "selection_reason": "Selected lowest validation loss among successful candidates; test data was not used."
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "config": {
+    "seed": 2026,
+    "stratify_column": "target",
+    "test_fraction": 0.15,
+    "train_fraction": 0.7,
+    "validation_fraction": 0.15
+  },
+  "dataset_fingerprint": "affad3be446274af5351c1168ce52e70f39989ed27a007deab106c03aa1e49f7",
+  "indices": {
+    "test": [
+      4,
+      9,
+      10,
+      20,
+      27,
+      38,
+      43,
+      45
+    ],
+    "train": [
+      0,
+      1,
+      2,
+      3,
+      5,
+      6,
+      7,
+      8,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      21,
+      22,
+      24,
+      25,
+      28,
+      29,
+      30,
+      31,
+      33,
+      34,
+      35,
+      39,
+      40,
+      42,
+      44,
+      46
+    ],
+    "validation": [
+      23,
+      26,
+      32,
+      36,
+      37,
+      41,
+      47
+    ]
+  }
+}

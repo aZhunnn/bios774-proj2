@@ -1,0 +1,7 @@
+{
+  "method": "tabular_vae",
+  "n_samples": 8,
+  "output_path": "outputs/phase3a_example/synthetic_samples.csv",
+  "seed": 2027,
+  "synthetic_record_column": "synthetic_record"
+}

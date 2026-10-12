@@ -67,6 +67,7 @@ def default_capabilities() -> tuple[ModelCapability, ...]:
             dataset_kinds=(DatasetKind.TABULAR, DatasetKind.SINGLE_CELL),
             objectives=(ObjectiveType.DATA_GENERATION, ObjectiveType.UNCERTAINTY_QUANTIFICATION),
             phase=2,
+            implemented=True,
         ),
         ModelCapability(
             name="image_diffusion",
