@@ -12,6 +12,7 @@ import torch
 from generative_agent.tabular_preprocessing import TabularVaePreprocessor
 from generative_agent.vae import TabularVAE
 from generative_agent.flow import RealNVPFlow
+from generative_agent.classical import GaussianCopula, TabularGMM
 
 
 @dataclass(frozen=True)
@@ -91,6 +92,37 @@ def generate_flow_synthetic(
             "seed": seed,
             "synthetic_record_column": "synthetic_record",
             "method": "tabular_flow",
+            "output_path": str(output_path) if output_path else None,
+        },
+    )
+
+
+def generate_classical_synthetic(
+    model: TabularGMM | GaussianCopula,
+    preprocessor: TabularVaePreprocessor,
+    *,
+    n_samples: int,
+    seed: int,
+    method: str,
+    output_path: Path | None = None,
+) -> GenerationResult:
+    if n_samples <= 0:
+        raise ValueError("n_samples must be positive.")
+    encoded = model.sample(n_samples, seed=seed)
+    if not np.isfinite(encoded).all():
+        raise ValueError(f"Generated {method} samples contain non-finite values.")
+    samples = preprocessor.inverse_transform(encoded)
+    samples.insert(0, "synthetic_record", True)
+    if output_path is not None:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        samples.to_csv(output_path, index=False)
+    return GenerationResult(
+        samples=samples,
+        metadata={
+            "n_samples": n_samples,
+            "seed": seed,
+            "synthetic_record_column": "synthetic_record",
+            "method": method,
             "output_path": str(output_path) if output_path else None,
         },
     )

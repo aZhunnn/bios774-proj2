@@ -1,0 +1,121 @@
+{
+  "decision_rule": "Select the method with the highest validation selection_score from synthetic-vs-validation evaluation. VAE ELBO and flow NLL are used only within their own family searches.",
+  "eligibility": {
+    "eligible_methods": [
+      "baseline",
+      "vae",
+      "flow",
+      "gmm",
+      "copula"
+    ],
+    "method_eligibility": [
+      {
+        "eligible": true,
+        "limitations": [
+          "Eligibility does not imply high fidelity or privacy protection."
+        ],
+        "method": "baseline",
+        "reasons": [
+          "Method is eligible for internal testing or stress-testing under current deterministic rules."
+        ]
+      },
+      {
+        "eligible": true,
+        "limitations": [
+          "Eligibility does not imply high fidelity or privacy protection."
+        ],
+        "method": "vae",
+        "reasons": [
+          "Method is eligible for internal testing or stress-testing under current deterministic rules."
+        ]
+      },
+      {
+        "eligible": true,
+        "limitations": [
+          "Eligibility does not imply high fidelity or privacy protection."
+        ],
+        "method": "flow",
+        "reasons": [
+          "Method is eligible for internal testing or stress-testing under current deterministic rules."
+        ]
+      },
+      {
+        "eligible": true,
+        "limitations": [
+          "Eligibility does not imply high fidelity or privacy protection."
+        ],
+        "method": "gmm",
+        "reasons": [
+          "Method is eligible for internal testing or stress-testing under current deterministic rules."
+        ]
+      },
+      {
+        "eligible": true,
+        "limitations": [
+          "Eligibility does not imply high fidelity or privacy protection."
+        ],
+        "method": "copula",
+        "reasons": [
+          "Method is eligible for internal testing or stress-testing under current deterministic rules."
+        ]
+      }
+    ],
+    "ranking_metric": "selection_score",
+    "rejected_methods": [],
+    "selected_method": "baseline",
+    "selection_reason": "Selected highest selection_score among eligible methods; hard eligibility rules were applied before ranking.",
+    "use_case": "internal_testing"
+  },
+  "metric_definition": "selection_score = 0.45 train-scale-normalized marginal fidelity + 0.35 dependence preservation + 0.20 legacy marginal fidelity when correlations are valid; without correlations, 0.75 normalized marginal + 0.25 legacy marginal.",
+  "metric_direction": "higher selection_score is better",
+  "sample_count": 734,
+  "scores": {
+    "baseline": {
+      "data_generation_fidelity": 0.7120288033647164,
+      "dependence_preservation": 0.966044913283156,
+      "duplicate_fraction": 0.1539509536784741,
+      "nearest_neighbor_mean": 0.0,
+      "selection_score": 0.9125376457832101,
+      "train_scale_normalized_marginal_fidelity": 0.9600359232470271
+    },
+    "copula": {
+      "data_generation_fidelity": 0.6212939850587208,
+      "dependence_preservation": 0.9532556444491405,
+      "duplicate_fraction": 0.0,
+      "nearest_neighbor_mean": 1.4699613483794136,
+      "selection_score": 0.8737757229364566,
+      "train_scale_normalized_marginal_fidelity": 0.9241721119278072
+    },
+    "flow": {
+      "data_generation_fidelity": 0.6843117865424767,
+      "dependence_preservation": 0.9335511167232102,
+      "duplicate_fraction": 0.0,
+      "nearest_neighbor_mean": 1.5071339571278755,
+      "selection_score": 0.8829950397244746,
+      "train_scale_normalized_marginal_fidelity": 0.9319773145841236
+    },
+    "gmm": {
+      "data_generation_fidelity": 0.6375065034413024,
+      "dependence_preservation": 0.9732418746064648,
+      "duplicate_fraction": 0.0,
+      "nearest_neighbor_mean": 1.711595127072366,
+      "selection_score": 0.8595421279654413,
+      "train_scale_normalized_marginal_fidelity": 0.8697914914775958
+    },
+    "vae": {
+      "data_generation_fidelity": 0.3521210266826008,
+      "dependence_preservation": 0.6105978812294912,
+      "duplicate_fraction": 0.0,
+      "nearest_neighbor_mean": 0.8453001530245791,
+      "selection_score": 0.6384865354408005,
+      "train_scale_normalized_marginal_fidelity": 0.7874512703865743
+    }
+  },
+  "seeds": {
+    "baseline": 2033,
+    "copula": 2045,
+    "flow": 2039,
+    "gmm": 2043,
+    "vae": 2037
+  }
+}

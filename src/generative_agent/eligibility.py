@@ -15,6 +15,8 @@ BOOTSTRAP_METHODS = {"baseline", "training_row_bootstrap", "validation_bootstrap
 VAE_METHODS = {"vae", "tabular_vae", "validation_tabular_vae", "image_vae", "validation_image_vae"}
 FLOW_METHODS = {"flow", "tabular_flow", "validation_tabular_flow"}
 GAN_METHODS = {"gan", "image_gan", "validation_image_gan"}
+GMM_METHODS = {"gmm", "tabular_gmm", "validation_tabular_gmm"}
+COPULA_METHODS = {"copula", "tabular_copula", "validation_tabular_copula"}
 
 
 @dataclass(frozen=True)
@@ -54,6 +56,10 @@ def normalize_method_name(method: str) -> str:
         return "flow"
     if method in GAN_METHODS:
         return "gan"
+    if method in GMM_METHODS:
+        return "gmm"
+    if method in COPULA_METHODS:
+        return "copula"
     return method
 
 
@@ -64,7 +70,7 @@ def method_eligibility(method: str, use_case: ObjectiveUseCase) -> MethodEligibi
             method=normalized,
             eligible=False,
             reasons=("No currently implemented method has a formal privacy-preserving mechanism or guarantee.",),
-            limitations=("VAE/flow samples are not private merely because they differ from training records.",),
+            limitations=("Model-generated samples are not private merely because they differ from training records.",),
         )
     if normalized == "baseline" and use_case is ObjectiveUseCase.EXTERNAL_SHARING:
         return MethodEligibility(
@@ -73,7 +79,7 @@ def method_eligibility(method: str, use_case: ObjectiveUseCase) -> MethodEligibi
             reasons=("Exact-record bootstrap resampling is not eligible for external synthetic-data sharing.",),
             limitations=("Bootstrap can duplicate training rows and has nearest-neighbor distance 0 by construction.",),
         )
-    if normalized in {"vae", "flow", "gan"} and use_case is ObjectiveUseCase.EXTERNAL_SHARING:
+    if normalized in {"vae", "flow", "gan", "gmm", "copula"} and use_case is ObjectiveUseCase.EXTERNAL_SHARING:
         return MethodEligibility(
             method=normalized,
             eligible=True,

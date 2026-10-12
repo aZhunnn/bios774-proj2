@@ -1,0 +1,235 @@
+{
+  "budget": {
+    "allocation": {
+      "copula": 1,
+      "flow": 1,
+      "gmm": 1,
+      "vae": 1
+    },
+    "max_trained_candidates": 4,
+    "semantics": "max_models is the total number of trained generative candidates across all model families. Bootstrap baseline does not consume a training slot.",
+    "trained_candidates": 4
+  },
+  "copula": {
+    "candidates": [
+      {
+        "checkpoint_path": "outputs/phase6a_wine_white_classical/tabular_copula_candidate_0.pkl",
+        "config": {
+          "correlation_regularization": 1e-06,
+          "min_u": 1e-06,
+          "seed": 2067
+        },
+        "diagnostics": {
+          "correlation_regularization": 1e-06,
+          "limitations": [
+            "Empirical marginals reproduce observed support approximately and do not extrapolate tails beyond training extremes.",
+            "Gaussian copula captures linear latent dependence, not arbitrary nonlinear or tail dependence."
+          ],
+          "marginal_estimator": "empirical_quantile_linear_interpolation",
+          "min_eigenvalue": 0.04430045722200077,
+          "n_features": 11
+        },
+        "failed": false,
+        "failure_reason": null,
+        "validation_dependence_score": -0.03825878186115019,
+        "wall_seconds": 0.005098042078316212
+      }
+    ],
+    "selected": {
+      "checkpoint_path": "outputs/phase6a_wine_white_classical/tabular_copula_candidate_0.pkl",
+      "config": {
+        "correlation_regularization": 1e-06,
+        "min_u": 1e-06,
+        "seed": 2067
+      },
+      "diagnostics": {
+        "correlation_regularization": 1e-06,
+        "limitations": [
+          "Empirical marginals reproduce observed support approximately and do not extrapolate tails beyond training extremes.",
+          "Gaussian copula captures linear latent dependence, not arbitrary nonlinear or tail dependence."
+        ],
+        "marginal_estimator": "empirical_quantile_linear_interpolation",
+        "min_eigenvalue": 0.04430045722200077,
+        "n_features": 11
+      },
+      "failed": false,
+      "failure_reason": null,
+      "validation_dependence_score": -0.03825878186115019,
+      "wall_seconds": 0.005098042078316212
+    },
+    "selected_index": 0,
+    "selection_reason": "Selected highest validation dependence proxy within copula family; test data was not used."
+  },
+  "flow": {
+    "candidates": [
+      {
+        "checkpoint_path": "outputs/phase6a_wine_white_classical/tabular_flow_candidate_0.pt",
+        "config": {
+          "batch_size": 32,
+          "device": "cpu",
+          "early_stopping_patience": 5,
+          "epochs": 5,
+          "hidden_dim": 32,
+          "input_dim": 11,
+          "learning_rate": 0.001,
+          "num_layers": 4,
+          "seed": 2127
+        },
+        "epochs_ran": 5,
+        "failed": false,
+        "failure_reason": null,
+        "history": {
+          "train_nll": [
+            15.124412713227448,
+            13.796849065356785,
+            12.754572100109524,
+            12.102241613246777,
+            11.79441112059134
+          ],
+          "validation_nll": [
+            14.3749418258667,
+            13.26424789428711,
+            12.397820472717285,
+            12.058106422424316,
+            11.842278480529785
+          ]
+        },
+        "validation_nll": 11.842278480529785,
+        "wall_seconds": 0.3975411248393357
+      }
+    ],
+    "selected_index": 0,
+    "selection_reason": "Selected lowest validation negative log likelihood within flow family; test data was not used."
+  },
+  "gmm": {
+    "candidates": [
+      {
+        "checkpoint_path": "outputs/phase6a_wine_white_classical/tabular_gmm_candidate_0.pkl",
+        "config": {
+          "covariance_type": "full",
+          "max_iter": 200,
+          "n_components": 1,
+          "reg_covar": 1e-05,
+          "seed": 2057
+        },
+        "diagnostics": {
+          "converged": true,
+          "covariance_type": "full",
+          "lower_bound": -13.141667366027832,
+          "means": [
+            [
+              -3.0210809853770115e-08,
+              -4.839292344627211e-08,
+              -1.6673308778081264e-07,
+              6.431530419348519e-09,
+              1.1124809518037182e-08,
+              9.289215796570716e-08,
+              6.118645146102608e-09,
+              -1.0290449381500366e-08,
+              1.668721409942009e-07,
+              -4.449923984850557e-09,
+              -1.0874501299440453e-07
+            ]
+          ],
+          "n_iter": 2,
+          "reg_covar": 1e-05,
+          "weights": [
+            1.0
+          ]
+        },
+        "failed": false,
+        "failure_reason": null,
+        "validation_log_likelihood": -13.116392135620117,
+        "wall_seconds": 0.02233445830643177
+      }
+    ],
+    "selected": {
+      "checkpoint_path": "outputs/phase6a_wine_white_classical/tabular_gmm_candidate_0.pkl",
+      "config": {
+        "covariance_type": "full",
+        "max_iter": 200,
+        "n_components": 1,
+        "reg_covar": 1e-05,
+        "seed": 2057
+      },
+      "diagnostics": {
+        "converged": true,
+        "covariance_type": "full",
+        "lower_bound": -13.141667366027832,
+        "means": [
+          [
+            -3.0210809853770115e-08,
+            -4.839292344627211e-08,
+            -1.6673308778081264e-07,
+            6.431530419348519e-09,
+            1.1124809518037182e-08,
+            9.289215796570716e-08,
+            6.118645146102608e-09,
+            -1.0290449381500366e-08,
+            1.668721409942009e-07,
+            -4.449923984850557e-09,
+            -1.0874501299440453e-07
+          ]
+        ],
+        "n_iter": 2,
+        "reg_covar": 1e-05,
+        "weights": [
+          1.0
+        ]
+      },
+      "failed": false,
+      "failure_reason": null,
+      "validation_log_likelihood": -13.116392135620117,
+      "wall_seconds": 0.02233445830643177
+    },
+    "selected_index": 0,
+    "selection_reason": "Selected highest validation average log likelihood within GMM family; test data was not used."
+  },
+  "vae": {
+    "candidates": [
+      {
+        "checkpoint_path": "outputs/phase6a_wine_white_classical/tabular_vae_candidate_0.pt",
+        "config": {
+          "batch_size": 32,
+          "binary_dim": 0,
+          "continuous_dim": 11,
+          "device": "cpu",
+          "early_stopping_patience": 5,
+          "epochs": 5,
+          "hidden_dims": [
+            32,
+            16
+          ],
+          "input_dim": 11,
+          "kl_weight": 1.0,
+          "latent_dim": 4,
+          "learning_rate": 0.001,
+          "seed": 2026
+        },
+        "epochs_ran": 5,
+        "failed": false,
+        "failure_reason": null,
+        "history": {
+          "train_loss": [
+            15.650201347139147,
+            15.525706891660336,
+            15.234358840518528,
+            15.169126916814733,
+            15.102156762723569
+          ],
+          "validation_loss": [
+            15.773663520812988,
+            15.548996925354004,
+            15.310150146484375,
+            15.23876953125,
+            15.249807357788086
+          ]
+        },
+        "validation_loss": 15.23876953125,
+        "wall_seconds": 0.2347261249087751
+      }
+    ],
+    "selected_index": 0,
+    "selection_reason": "Selected lowest validation loss among successful candidates; test data was not used."
+  }
+}

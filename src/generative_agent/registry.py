@@ -21,6 +21,7 @@ class ModelCapability:
     feature_types: tuple[str, ...] = ("continuous", "binary")
     operations: tuple[str, ...] = ("train", "generate", "evaluate")
     computational_requirements: str = "cpu"
+    limitations: tuple[str, ...] = ()
 
 
 class CapabilityRegistry:
@@ -65,6 +66,7 @@ def default_capabilities() -> tuple[ModelCapability, ...]:
             implemented=True,
             modalities=("tabular",),
             feature_types=("continuous", "binary"),
+            limitations=("Gaussian continuous and Bernoulli binary observation assumptions.",),
         ),
         ModelCapability(
             name="tabular_flow",
@@ -76,6 +78,35 @@ def default_capabilities() -> tuple[ModelCapability, ...]:
             implemented=True,
             modalities=("tabular",),
             feature_types=("continuous",),
+            limitations=("Continuous-only features; no missing values; likelihood is used only within flow-family selection.",),
+        ),
+        ModelCapability(
+            name="tabular_gmm",
+            family="Gaussian Mixture Model",
+            training_framework="scikit-learn",
+            dataset_kinds=(DatasetKind.TABULAR, DatasetKind.SINGLE_CELL),
+            objectives=(ObjectiveType.DATA_GENERATION,),
+            phase=6,
+            implemented=True,
+            modalities=("tabular",),
+            feature_types=("continuous",),
+            operations=("train", "generate", "evaluate", "checkpoint"),
+            computational_requirements="cpu",
+            limitations=("Continuous-only features; component count and covariance regularization affect stability.",),
+        ),
+        ModelCapability(
+            name="tabular_copula",
+            family="Gaussian Copula",
+            training_framework="numpy scipy",
+            dataset_kinds=(DatasetKind.TABULAR, DatasetKind.SINGLE_CELL),
+            objectives=(ObjectiveType.DATA_GENERATION,),
+            phase=6,
+            implemented=True,
+            modalities=("tabular",),
+            feature_types=("continuous",),
+            operations=("train", "generate", "evaluate", "checkpoint"),
+            computational_requirements="cpu",
+            limitations=("Continuous-only features; empirical marginals do not extrapolate tails and Gaussian copula does not capture arbitrary nonlinear or tail dependence.",),
         ),
         ModelCapability(
             name="image_vae",
@@ -89,6 +120,7 @@ def default_capabilities() -> tuple[ModelCapability, ...]:
             feature_types=("pixel_continuous",),
             operations=("train", "generate", "reconstruct", "evaluate"),
             computational_requirements="cpu_small_image",
+            limitations=("Unconditional small-image VAE; labels are metadata only.",),
         ),
         ModelCapability(
             name="image_diffusion",
@@ -110,5 +142,6 @@ def default_capabilities() -> tuple[ModelCapability, ...]:
             feature_types=("pixel_continuous",),
             operations=("train", "generate", "evaluate"),
             computational_requirements="cpu_small_image",
+            limitations=("Unconditional small-image GAN; adversarial losses are not cross-family quality metrics.",),
         ),
     )
