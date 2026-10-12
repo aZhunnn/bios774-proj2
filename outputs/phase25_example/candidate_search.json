@@ -1,0 +1,79 @@
+{
+  "candidates": [
+    {
+      "checkpoint_path": "outputs/phase25_example/tabular_vae_candidate_0.pt",
+      "config": {
+        "batch_size": 17,
+        "binary_dim": 1,
+        "continuous_dim": 2,
+        "device": "cpu",
+        "early_stopping_patience": 3,
+        "epochs": 3,
+        "hidden_dims": [
+          32,
+          16
+        ],
+        "input_dim": 3,
+        "kl_weight": 1.0,
+        "latent_dim": 3,
+        "learning_rate": 0.001,
+        "seed": 2026
+      },
+      "epochs_ran": 3,
+      "failed": false,
+      "failure_reason": null,
+      "history": {
+        "train_loss": [
+          3.5697460174560547,
+          3.6053411960601807,
+          3.5709900856018066
+        ],
+        "validation_loss": [
+          3.474095582962036,
+          3.4706923961639404,
+          3.446455717086792
+        ]
+      },
+      "validation_loss": 3.446455717086792,
+      "wall_seconds": 0.01141933398321271
+    },
+    {
+      "checkpoint_path": "outputs/phase25_example/tabular_vae_candidate_1.pt",
+      "config": {
+        "batch_size": 17,
+        "binary_dim": 1,
+        "continuous_dim": 2,
+        "device": "cpu",
+        "early_stopping_patience": 3,
+        "epochs": 3,
+        "hidden_dims": [
+          16
+        ],
+        "input_dim": 3,
+        "kl_weight": 1.0,
+        "latent_dim": 2,
+        "learning_rate": 0.0005,
+        "seed": 2043
+      },
+      "epochs_ran": 3,
+      "failed": false,
+      "failure_reason": null,
+      "history": {
+        "train_loss": [
+          3.587759256362915,
+          3.692610025405884,
+          3.6776349544525146
+        ],
+        "validation_loss": [
+          3.826096296310425,
+          3.7839767932891846,
+          3.7476327419281006
+        ]
+      },
+      "validation_loss": 3.7476327419281006,
+      "wall_seconds": 0.00308320764452219
+    }
+  ],
+  "selected_index": 0,
+  "selection_reason": "Selected lowest validation loss among successful candidates; test data was not used."
+}

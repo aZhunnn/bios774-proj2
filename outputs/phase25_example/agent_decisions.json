@@ -1,0 +1,32 @@
+{
+  "constraints": [
+    "max_models=2",
+    "max_epochs=3",
+    "max_wall_minutes=30",
+    "seed=2026"
+  ],
+  "feasible": true,
+  "objective_decision": {
+    "action": "use_vae",
+    "constraints": [
+      "objective=data_generation",
+      "n_samples=24",
+      "n_features=5",
+      "max_models=2",
+      "max_epochs=3",
+      "max_wall_minutes=30",
+      "seed=2026"
+    ],
+    "reasons": [
+      "Unconditional tabular data_generation is supported and budget permits VAE training."
+    ],
+    "supported_objective": true,
+    "uses_generative_model": true
+  },
+  "planner": "deterministic rules plus validation-only candidate search; no LLM reasoning or autonomous optimization",
+  "reasons": [],
+  "selection": "Selected lowest validation loss among successful candidates; test data was not used.",
+  "warnings": [
+    "Small sample size may limit generative model quality."
+  ]
+}

@@ -61,11 +61,15 @@ class TabularVaePreprocessor:
         if not model_columns:
             raise ValueError("No modelable columns remain after applying identifier/target/conditioning roles.")
 
-        missing = frame[model_columns].isna().sum()
+        decision_indices = list(manifest.indices.train + manifest.indices.validation)
+        missing = frame.iloc[decision_indices][model_columns].isna().sum()
         missing = missing[missing > 0]
         if not missing.empty:
             details = ", ".join(f"{column}={count}" for column, count in missing.items())
-            raise ValueError(f"Missing values are not supported by Phase 2 preprocessing: {details}.")
+            raise ValueError(
+                "Missing values are not supported by Phase 2 preprocessing in train/validation data: "
+                f"{details}."
+            )
 
         continuous: list[str] = []
         binary: list[str] = []
@@ -107,6 +111,11 @@ class TabularVaePreprocessor:
     def transform(self, frame: pd.DataFrame, indices: tuple[int, ...] | list[int]) -> np.ndarray:
         metadata = self._metadata()
         subset = frame.iloc[list(indices)]
+        missing = subset[list(metadata.schema.model_columns)].isna().sum()
+        missing = missing[missing > 0]
+        if not missing.empty:
+            details = ", ".join(f"{column}={count}" for column, count in missing.items())
+            raise ValueError(f"Missing values are not supported during transform: {details}.")
         columns: list[np.ndarray] = []
         for column in metadata.schema.continuous:
             values = subset[column].astype(float).to_numpy()

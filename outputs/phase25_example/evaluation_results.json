@@ -1,0 +1,125 @@
+{
+  "baseline": {
+    "correlation_l1": 0.16695175418254715,
+    "duplicate_fraction": 0.16666666666666666,
+    "feature_differences": {
+      "flag": {
+        "absolute_rate_difference": 0.08333333333333337,
+        "synthetic_positive_rate": 0.6666666666666666,
+        "test_positive_rate": 0.75
+      },
+      "x1": {
+        "absolute_mean_difference": 0.8125,
+        "absolute_median_difference": 1.125,
+        "iqr_difference": 0.7125,
+        "synthetic_mean": 0.9,
+        "synthetic_std": 0.9974968671630001,
+        "test_mean": 0.08749999999999997,
+        "test_std": 0.5649944689994761
+      },
+      "x2": {
+        "absolute_mean_difference": 0.2,
+        "absolute_median_difference": 0.15000000000000002,
+        "iqr_difference": 0.21250000000000008,
+        "synthetic_mean": 0.425,
+        "synthetic_std": 0.2940379794062892,
+        "test_mean": 0.22499999999999998,
+        "test_std": 0.20155644370746373
+      }
+    },
+    "marginal_fidelity_score": 0.6798866855524079,
+    "method": "training_row_bootstrap",
+    "nearest_neighbor_mean": 0.0,
+    "nearest_neighbor_min": 0.0,
+    "notes": [
+      "Nearest-neighbor distances are memorization proxies, not formal privacy guarantees.",
+      "Bootstrap baseline is evaluated with the same metrics for fairness."
+    ],
+    "objective_metrics": {
+      "data_generation_fidelity": 0.6798866855524079
+    },
+    "unique_fraction": 0.8333333333333334
+  },
+  "selected": {
+    "correlation_l1": 0.2443331355941375,
+    "duplicate_fraction": 0.0,
+    "feature_differences": {
+      "flag": {
+        "absolute_rate_difference": 0.75,
+        "synthetic_positive_rate": 0.0,
+        "test_positive_rate": 0.75
+      },
+      "x1": {
+        "absolute_mean_difference": 0.7096739669640859,
+        "absolute_median_difference": 0.8212971031665802,
+        "iqr_difference": 0.671814227104187,
+        "synthetic_mean": 0.7971739669640859,
+        "synthetic_std": 0.022167887284144726,
+        "test_mean": 0.08749999999999997,
+        "test_std": 0.5649944689994761
+      },
+      "x2": {
+        "absolute_mean_difference": 0.16899743080139162,
+        "absolute_median_difference": 0.1699520289897919,
+        "iqr_difference": 0.24172306060791016,
+        "synthetic_mean": 0.3939974308013916,
+        "synthetic_std": 0.01285950717009557,
+        "test_mean": 0.22499999999999998,
+        "test_std": 0.20155644370746373
+      }
+    },
+    "marginal_fidelity_score": 0.6645491082976928,
+    "method": "tabular_vae",
+    "nearest_neighbor_mean": 0.6649390113126706,
+    "nearest_neighbor_min": 0.5907901002581565,
+    "notes": [
+      "Nearest-neighbor distances are memorization proxies, not formal privacy guarantees.",
+      "Bootstrap baseline is evaluated with the same metrics for fairness."
+    ],
+    "objective_metrics": {
+      "data_generation_fidelity": 0.6645491082976928
+    },
+    "unique_fraction": 1.0
+  },
+  "vae": {
+    "correlation_l1": 0.2443331355941375,
+    "duplicate_fraction": 0.0,
+    "feature_differences": {
+      "flag": {
+        "absolute_rate_difference": 0.75,
+        "synthetic_positive_rate": 0.0,
+        "test_positive_rate": 0.75
+      },
+      "x1": {
+        "absolute_mean_difference": 0.7096739669640859,
+        "absolute_median_difference": 0.8212971031665802,
+        "iqr_difference": 0.671814227104187,
+        "synthetic_mean": 0.7971739669640859,
+        "synthetic_std": 0.022167887284144726,
+        "test_mean": 0.08749999999999997,
+        "test_std": 0.5649944689994761
+      },
+      "x2": {
+        "absolute_mean_difference": 0.16899743080139162,
+        "absolute_median_difference": 0.1699520289897919,
+        "iqr_difference": 0.24172306060791016,
+        "synthetic_mean": 0.3939974308013916,
+        "synthetic_std": 0.01285950717009557,
+        "test_mean": 0.22499999999999998,
+        "test_std": 0.20155644370746373
+      }
+    },
+    "marginal_fidelity_score": 0.6645491082976928,
+    "method": "tabular_vae",
+    "nearest_neighbor_mean": 0.6649390113126706,
+    "nearest_neighbor_min": 0.5907901002581565,
+    "notes": [
+      "Nearest-neighbor distances are memorization proxies, not formal privacy guarantees.",
+      "Bootstrap baseline is evaluated with the same metrics for fairness."
+    ],
+    "objective_metrics": {
+      "data_generation_fidelity": 0.6645491082976928
+    },
+    "unique_fraction": 1.0
+  }
+}

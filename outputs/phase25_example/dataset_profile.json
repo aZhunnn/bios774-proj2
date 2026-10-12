@@ -1,0 +1,55 @@
+{
+  "class_balance": {
+    "case": 8,
+    "control": 16
+  },
+  "dataset_name": "phase2_toy_tabular",
+  "feature_schema": [
+    {
+      "feature_type": "text",
+      "missing_count": 0,
+      "name": "id",
+      "unique_count": 24
+    },
+    {
+      "feature_type": "numeric",
+      "missing_count": 0,
+      "name": "x1",
+      "unique_count": 24
+    },
+    {
+      "feature_type": "numeric",
+      "missing_count": 0,
+      "name": "x2",
+      "unique_count": 19
+    },
+    {
+      "feature_type": "numeric",
+      "missing_count": 0,
+      "name": "flag",
+      "unique_count": 2
+    },
+    {
+      "feature_type": "categorical",
+      "missing_count": 0,
+      "name": "target",
+      "unique_count": 2
+    }
+  ],
+  "kind": "tabular",
+  "missing_values": {
+    "flag": 0,
+    "id": 0,
+    "target": 0,
+    "x1": 0,
+    "x2": 0
+  },
+  "n_features": 5,
+  "n_samples": 24,
+  "notes": [],
+  "role_exclusions": [
+    "id",
+    "target"
+  ],
+  "target_column": "target"
+}

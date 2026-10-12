@@ -1,0 +1,6 @@
+{
+  "n_samples": 6,
+  "output_path": "outputs/phase25_example/synthetic_samples.csv",
+  "seed": 2027,
+  "synthetic_record_column": "synthetic_record"
+}

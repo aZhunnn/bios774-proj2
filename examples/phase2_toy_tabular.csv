@@ -15,3 +15,11 @@ row_12,0.80,0.10,0,case
 row_13,0.95,0.50,1,control
 row_14,1.10,0.20,0,control
 row_15,1.25,0.60,1,case
+row_16,1.40,0.30,0,control
+row_17,1.55,0.70,1,control
+row_18,1.70,0.40,0,case
+row_19,1.85,0.80,1,control
+row_20,2.00,0.50,0,control
+row_21,2.15,0.90,1,case
+row_22,2.30,0.60,0,control
+row_23,2.45,1.00,1,control

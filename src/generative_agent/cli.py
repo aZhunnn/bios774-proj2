@@ -19,6 +19,7 @@ def main() -> None:
     parser.add_argument("--identifier", action="append", default=[])
     parser.add_argument("--conditioning", action="append", default=[])
     parser.add_argument("--epochs", type=int, default=20)
+    parser.add_argument("--max-models", type=int, default=2)
     parser.add_argument("--seed", type=int, default=2026)
     parser.add_argument("--n-synthetic", type=int)
     args = parser.parse_args()
@@ -31,12 +32,12 @@ def main() -> None:
             target=args.target,
             conditioning=tuple(args.conditioning),
         ),
-        budget=ExperimentBudget(max_models=1, max_epochs=args.epochs, seed=args.seed),
+        budget=ExperimentBudget(max_models=args.max_models, max_epochs=args.epochs, seed=args.seed),
         n_synthetic=args.n_synthetic,
     )
     print(f"Report: {result.report_path}")
     print(f"Synthetic samples: {result.synthetic_path}")
-    print(f"Checkpoint: {result.checkpoint_path}")
+    print(f"Checkpoint: {result.checkpoint_path}" if result.checkpoint_path else "Checkpoint: none")
 
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+import json
 from pathlib import Path
 
 import numpy as np
@@ -9,6 +10,7 @@ import torch
 from generative_agent.evaluation import bootstrap_baseline, evaluate_synthetic
 from generative_agent.generation import generate_synthetic
 from generative_agent.splitting import DatasetSplitter, SplitConfig
+from generative_agent.state import ExperimentBudget
 from generative_agent.tabular_io import ColumnRoles, load_csv_dataset
 from generative_agent.tabular_preprocessing import TabularVaePreprocessor
 from generative_agent.vae import TabularVAE, VaeConfig, VaeTrainer
@@ -130,6 +132,8 @@ class Phase2TabularVaeTests(unittest.TestCase):
         self.assertIn("x1", result.feature_differences)
         self.assertIn("flag", result.feature_differences)
         self.assertGreaterEqual(result.duplicate_fraction, 0.0)
+        self.assertGreaterEqual(result.unique_fraction, 0.0)
+        self.assertIn("data_generation_fidelity", result.objective_metrics)
         self.assertIn("proxies", result.notes[0])
 
     def test_csv_loading_and_end_to_end_workflow(self):
@@ -153,16 +157,50 @@ class Phase2TabularVaeTests(unittest.TestCase):
             self.assertTrue(result.report_path.exists())
             self.assertTrue(result.synthetic_path.exists())
             self.assertTrue(result.checkpoint_path.exists())
+            search = json.loads((output_dir / "candidate_search.json").read_text(encoding="utf-8"))
+            self.assertEqual(len(search["candidates"]), 2)
+            self.assertIn("validation loss", search["selection_reason"])
             synthetic = pd.read_csv(result.synthetic_path)
             self.assertEqual(len(synthetic), 8)
             self.assertEqual(set(synthetic.columns), {"synthetic_record", "x1", "x2", "flag"})
+
+    def test_workflow_can_select_baseline_without_vae_when_budget_is_too_small(self):
+        frame = phase2_frame(12)
+        with tempfile.TemporaryDirectory() as directory:
+            csv_path = Path(directory) / "toy.csv"
+            output_dir = Path(directory) / "artifacts"
+            frame.to_csv(csv_path, index=False)
+
+            result = run_tabular_vae_workflow(
+                csv_path=csv_path,
+                objective_text="Generate synthetic tabular data.",
+                output_dir=output_dir,
+                roles=ColumnRoles(identifiers=("id",), target="target"),
+                budget=ExperimentBudget(max_models=1, max_epochs=2, max_wall_minutes=30),
+                n_synthetic=5,
+            )
+
+            self.assertIsNone(result.checkpoint_path)
+            decisions = json.loads((output_dir / "agent_decisions.json").read_text(encoding="utf-8"))
+            self.assertEqual(decisions["objective_decision"]["action"], "use_baseline")
+            self.assertFalse((output_dir / "candidate_search.json").exists())
+
+    def test_preprocessing_does_not_use_test_missingness_for_fit_decisions(self):
+        frame = phase2_frame()
+        manifest = DatasetSplitter().manifest(frame.to_dict(orient="records"), SplitConfig(seed=4))
+        frame.loc[manifest.indices.test[0], "x1"] = np.nan
+
+        preprocessor = TabularVaePreprocessor(roles=ColumnRoles(identifiers=("id",), target="target")).fit(frame, manifest)
+        self.assertEqual(preprocessor._metadata().fitted_train_indices, manifest.indices.train)
+        with self.assertRaisesRegex(ValueError, "Missing values are not supported during transform"):
+            preprocessor.transform(frame, manifest.indices.test)
 
     def test_workflow_rejects_unsupported_objective(self):
         frame = phase2_frame()
         with tempfile.TemporaryDirectory() as directory:
             csv_path = Path(directory) / "toy.csv"
             frame.to_csv(csv_path, index=False)
-            with self.assertRaisesRegex(ValueError, "data_generation objectives only"):
+            with self.assertRaisesRegex(ValueError, "Unsupported Phase 2.5 objective"):
                 run_tabular_vae_workflow(
                     csv_path=csv_path,
                     objective_text="Balance the minority class.",
