@@ -9,6 +9,7 @@ import json
 from generative_agent.agent import AgentFoundation
 from generative_agent.artifacts import LocalArtifactStore
 from generative_agent.decisioning import DecisionAction, DeterministicDecisionEngine
+from generative_agent.eligibility import select_eligible_method
 from generative_agent.evaluation import bootstrap_baseline, evaluate_synthetic
 from generative_agent.flow import FlowConfig
 from generative_agent.flow_search import propose_flow_configs, run_flow_search
@@ -229,7 +230,16 @@ def run_tabular_generation_workflow(
                 },
                 "scores": validation_scores,
             }
-            selected_family = max(validation_scores, key=lambda key: validation_scores[key]["selection_score"])
+            eligibility_selection = select_eligible_method(
+                validation_scores,
+                use_case=state.objective.constraints["use_case"],
+                ranking_metric="selection_score",
+            )
+            validation_comparison["eligibility"] = eligibility_selection.to_dict()
+            if eligibility_selection.selected_method is None:
+                selected_family = "rejected"
+            else:
+                selected_family = eligibility_selection.selected_method
             final_evaluations = {"baseline": baseline_eval.to_dict()}
             final_generations = {"baseline": baseline}
             if "vae" in validation_scores:
@@ -263,7 +273,17 @@ def run_tabular_generation_workflow(
                     method="tabular_flow",
                 ).to_dict()
 
-            if selected_family == "baseline":
+            if selected_family == "rejected":
+                baseline.to_csv(synthetic_path, index=False)
+                generation_metadata = {
+                    "n_samples": sample_count,
+                    "seed": selected_budget.seed,
+                    "method": "rejected_no_eligible_synthetic_release",
+                    "output_path": str(synthetic_path),
+                }
+                evaluation_payload = {"selected": {"method": "rejected", "reason": eligibility_selection.selection_reason}, **final_evaluations}
+                search_payload = family_searches
+            elif selected_family == "baseline":
                 final_generations["baseline"].to_csv(synthetic_path, index=False)
                 generation_metadata = {
                     "n_samples": sample_count,
@@ -313,6 +333,7 @@ def run_tabular_generation_workflow(
             else "Baseline selected before generative training."
         ),
         "validation_comparison": validation_comparison,
+        "eligibility": validation_comparison.get("eligibility", {}),
         "model_limitations": {
             "vae": "Supports continuous and binary tabular features with Gaussian/Bernoulli observation assumptions.",
             "flow": "Phase 3A flow supports continuous-only tabular features with no missing values.",
@@ -366,7 +387,8 @@ def _render_report(
             "- Binary features use a Bernoulli likelihood parameterized by decoder logits.",
             "- Within-family selection uses validation loss or validation likelihood only inside that family.",
             "- max_models is total trained generative candidates across all families; bootstrap baseline does not consume a training slot.",
-            "- Cross-family selection uses the predeclared validation selection_score; held-out test data is used only for final evaluation.",
+            "- Eligibility is applied before performance ranking; hard eligibility constraints cannot be overridden by high fidelity.",
+            "- Cross-family selection uses the predeclared validation selection_score among eligible methods; held-out test data is used only for final evaluation.",
             "- RealNVP flow is available only for continuous tabular features with no missing values.",
             "- Conditional generation, class balancing, image generation, GANs, and diffusion are not implemented.",
             "",

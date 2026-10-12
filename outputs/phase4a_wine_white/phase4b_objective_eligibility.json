@@ -1,0 +1,240 @@
+{
+  "internal_pipeline_testing": {
+    "objective_text": "Generate synthetic tabular data for internal pipeline testing and stress testing.",
+    "objective": {
+      "type": "data_generation",
+      "use_case": "internal_testing"
+    },
+    "selection": {
+      "use_case": "internal_testing",
+      "selected_method": "baseline",
+      "eligible_methods": [
+        "baseline",
+        "flow",
+        "vae"
+      ],
+      "rejected_methods": [],
+      "method_eligibility": [
+        {
+          "method": "baseline",
+          "eligible": true,
+          "reasons": [
+            "Method is eligible for internal testing or stress-testing under current deterministic rules."
+          ],
+          "limitations": [
+            "Eligibility does not imply high fidelity or privacy protection."
+          ]
+        },
+        {
+          "method": "flow",
+          "eligible": true,
+          "reasons": [
+            "Method is eligible for internal testing or stress-testing under current deterministic rules."
+          ],
+          "limitations": [
+            "Eligibility does not imply high fidelity or privacy protection."
+          ]
+        },
+        {
+          "method": "vae",
+          "eligible": true,
+          "reasons": [
+            "Method is eligible for internal testing or stress-testing under current deterministic rules."
+          ],
+          "limitations": [
+            "Eligibility does not imply high fidelity or privacy protection."
+          ]
+        }
+      ],
+      "ranking_metric": "selection_score",
+      "selection_reason": "Selected highest selection_score among eligible methods; hard eligibility rules were applied before ranking."
+    },
+    "validation_decision_rule": "Select the method with the highest validation selection_score from synthetic-vs-validation evaluation. VAE ELBO and flow NLL are used only within their own family searches.",
+    "validation_scores_used_for_ranking": {
+      "baseline": {
+        "data_generation_fidelity": 0.7120288033647164,
+        "dependence_preservation": 0.966044913283156,
+        "duplicate_fraction": 0.1539509536784741,
+        "nearest_neighbor_mean": 0.0,
+        "selection_score": 0.9125376457832101,
+        "train_scale_normalized_marginal_fidelity": 0.9600359232470271
+      },
+      "flow": {
+        "data_generation_fidelity": 0.7625078131558546,
+        "dependence_preservation": 0.960810887402346,
+        "duplicate_fraction": 0.0,
+        "nearest_neighbor_mean": 1.3894101358012565,
+        "selection_score": 0.912417743245997,
+        "train_scale_normalized_marginal_fidelity": 0.941405266720011
+      },
+      "vae": {
+        "data_generation_fidelity": 0.406744168848898,
+        "dependence_preservation": 0.6321472709457345,
+        "duplicate_fraction": 0.0,
+        "nearest_neighbor_mean": 0.8544359297273372,
+        "selection_score": 0.6661846283567006,
+        "train_scale_normalized_marginal_fidelity": 0.8079649994575864
+      }
+    },
+    "heldout_test_used_for_selection": false
+  },
+  "external_sharing_no_formal_privacy": {
+    "objective_text": "Generate synthetic tabular data for external sharing without a formal privacy guarantee.",
+    "objective": {
+      "type": "data_generation",
+      "use_case": "external_sharing"
+    },
+    "selection": {
+      "use_case": "external_sharing",
+      "selected_method": "flow",
+      "eligible_methods": [
+        "flow",
+        "vae"
+      ],
+      "rejected_methods": [
+        "baseline"
+      ],
+      "method_eligibility": [
+        {
+          "method": "baseline",
+          "eligible": false,
+          "reasons": [
+            "Exact-record bootstrap resampling is not eligible for external synthetic-data sharing."
+          ],
+          "limitations": [
+            "Bootstrap can duplicate training rows and has nearest-neighbor distance 0 by construction."
+          ]
+        },
+        {
+          "method": "flow",
+          "eligible": true,
+          "reasons": [
+            "Model-generated samples may be considered for external sharing only without claiming privacy guarantees."
+          ],
+          "limitations": [
+            "Requires disclosure that no formal privacy guarantee is implemented."
+          ]
+        },
+        {
+          "method": "vae",
+          "eligible": true,
+          "reasons": [
+            "Model-generated samples may be considered for external sharing only without claiming privacy guarantees."
+          ],
+          "limitations": [
+            "Requires disclosure that no formal privacy guarantee is implemented."
+          ]
+        }
+      ],
+      "ranking_metric": "selection_score",
+      "selection_reason": "Selected highest selection_score among eligible methods; hard eligibility rules were applied before ranking."
+    },
+    "validation_decision_rule": "Select the method with the highest validation selection_score from synthetic-vs-validation evaluation. VAE ELBO and flow NLL are used only within their own family searches.",
+    "validation_scores_used_for_ranking": {
+      "baseline": {
+        "data_generation_fidelity": 0.7120288033647164,
+        "dependence_preservation": 0.966044913283156,
+        "duplicate_fraction": 0.1539509536784741,
+        "nearest_neighbor_mean": 0.0,
+        "selection_score": 0.9125376457832101,
+        "train_scale_normalized_marginal_fidelity": 0.9600359232470271
+      },
+      "flow": {
+        "data_generation_fidelity": 0.7625078131558546,
+        "dependence_preservation": 0.960810887402346,
+        "duplicate_fraction": 0.0,
+        "nearest_neighbor_mean": 1.3894101358012565,
+        "selection_score": 0.912417743245997,
+        "train_scale_normalized_marginal_fidelity": 0.941405266720011
+      },
+      "vae": {
+        "data_generation_fidelity": 0.406744168848898,
+        "dependence_preservation": 0.6321472709457345,
+        "duplicate_fraction": 0.0,
+        "nearest_neighbor_mean": 0.8544359297273372,
+        "selection_score": 0.6661846283567006,
+        "train_scale_normalized_marginal_fidelity": 0.8079649994575864
+      }
+    },
+    "heldout_test_used_for_selection": false
+  },
+  "formal_privacy_guarantee": {
+    "objective_text": "Generate synthetic tabular data with a formal differential privacy guarantee.",
+    "objective": {
+      "type": "data_generation",
+      "use_case": "formal_privacy"
+    },
+    "selection": {
+      "use_case": "formal_privacy",
+      "selected_method": null,
+      "eligible_methods": [],
+      "rejected_methods": [
+        "baseline",
+        "flow",
+        "vae"
+      ],
+      "method_eligibility": [
+        {
+          "method": "baseline",
+          "eligible": false,
+          "reasons": [
+            "No currently implemented method has a formal privacy-preserving mechanism or guarantee."
+          ],
+          "limitations": [
+            "VAE/flow samples are not private merely because they differ from training records."
+          ]
+        },
+        {
+          "method": "flow",
+          "eligible": false,
+          "reasons": [
+            "No currently implemented method has a formal privacy-preserving mechanism or guarantee."
+          ],
+          "limitations": [
+            "VAE/flow samples are not private merely because they differ from training records."
+          ]
+        },
+        {
+          "method": "vae",
+          "eligible": false,
+          "reasons": [
+            "No currently implemented method has a formal privacy-preserving mechanism or guarantee."
+          ],
+          "limitations": [
+            "VAE/flow samples are not private merely because they differ from training records."
+          ]
+        }
+      ],
+      "ranking_metric": "selection_score",
+      "selection_reason": "No method is eligible under the requested use case."
+    },
+    "validation_decision_rule": "Select the method with the highest validation selection_score from synthetic-vs-validation evaluation. VAE ELBO and flow NLL are used only within their own family searches.",
+    "validation_scores_used_for_ranking": {
+      "baseline": {
+        "data_generation_fidelity": 0.7120288033647164,
+        "dependence_preservation": 0.966044913283156,
+        "duplicate_fraction": 0.1539509536784741,
+        "nearest_neighbor_mean": 0.0,
+        "selection_score": 0.9125376457832101,
+        "train_scale_normalized_marginal_fidelity": 0.9600359232470271
+      },
+      "flow": {
+        "data_generation_fidelity": 0.7625078131558546,
+        "dependence_preservation": 0.960810887402346,
+        "duplicate_fraction": 0.0,
+        "nearest_neighbor_mean": 1.3894101358012565,
+        "selection_score": 0.912417743245997,
+        "train_scale_normalized_marginal_fidelity": 0.941405266720011
+      },
+      "vae": {
+        "data_generation_fidelity": 0.406744168848898,
+        "dependence_preservation": 0.6321472709457345,
+        "duplicate_fraction": 0.0,
+        "nearest_neighbor_mean": 0.8544359297273372,
+        "selection_score": 0.6661846283567006,
+        "train_scale_normalized_marginal_fidelity": 0.8079649994575864
+      }
+    },
+    "heldout_test_used_for_selection": false
+  }
+}

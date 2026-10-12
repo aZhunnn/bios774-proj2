@@ -17,6 +17,12 @@ class ObjectiveType(str, Enum):
     EXPLORATORY = "exploratory"
 
 
+class ObjectiveUseCase(str, Enum):
+    INTERNAL_TESTING = "internal_testing"
+    EXTERNAL_SHARING = "external_sharing"
+    FORMAL_PRIVACY = "formal_privacy"
+
+
 @dataclass(frozen=True)
 class ObjectiveSpec:
     raw_text: str
@@ -74,5 +80,27 @@ class ObjectiveInterpreter:
             raw_text=text,
             objective_type=best,
             confidence=confidence,
+            constraints={"use_case": _infer_use_case(normalized).value},
             requested_outputs=outputs,
         )
+
+
+def _infer_use_case(normalized_text: str) -> ObjectiveUseCase:
+    no_privacy_terms = (
+        "without a formal privacy guarantee",
+        "without formal privacy",
+        "no formal privacy",
+        "no privacy guarantee",
+    )
+    privacy_terms = ("formal privacy", "privacy guarantee", "differential privacy", "private release", "provably private")
+    external_terms = ("external", "share", "sharing", "release", "public", "publish", "third party")
+    internal_terms = ("internal", "testing", "stress", "pipeline", "debug", "qa")
+    if any(term in normalized_text for term in no_privacy_terms):
+        return ObjectiveUseCase.EXTERNAL_SHARING
+    if any(term in normalized_text for term in privacy_terms):
+        return ObjectiveUseCase.FORMAL_PRIVACY
+    if any(term in normalized_text for term in external_terms):
+        return ObjectiveUseCase.EXTERNAL_SHARING
+    if any(term in normalized_text for term in internal_terms):
+        return ObjectiveUseCase.INTERNAL_TESTING
+    return ObjectiveUseCase.INTERNAL_TESTING
