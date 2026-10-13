@@ -1,0 +1,37 @@
+{
+  "channels": 3,
+  "image_shape": [
+    28,
+    28,
+    3
+  ],
+  "label_counts": {
+    "0": 39,
+    "1": 47,
+    "2": 36,
+    "3": 46,
+    "4": 34,
+    "5": 42,
+    "6": 42,
+    "7": 36,
+    "8": 62
+  },
+  "labels_are_metadata": true,
+  "n_samples": 384,
+  "name": "pathmnist",
+  "normalization": "unit",
+  "notes": [
+    "Labels are retained as metadata and are not used for conditioning in Phase 5A.",
+    "Gaussian unit-variance reconstruction loss is used on normalized pixel intensities."
+  ],
+  "reconstruction_assumption": "gaussian_unit_variance",
+  "split_counts": {
+    "test": 64,
+    "train": 256,
+    "validation": 64
+  },
+  "value_range": [
+    0.0,
+    255.0
+  ]
+}

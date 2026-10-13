@@ -344,7 +344,7 @@ def _evaluate_selected_on_test(*, name: str, model, train_dataset, test_dataset,
 def _render_report(profile, config, training, validation_evaluation, test_evaluation, decisions, candidates) -> str:
     return "\n".join(
         [
-            "# Phase 5C Image Evaluation and Selection Report",
+            "# Project 2 Image Generative Agent Report",
             "",
             "## Dataset Profile",
             f"```json\n{json.dumps(profile, indent=2)}\n```",

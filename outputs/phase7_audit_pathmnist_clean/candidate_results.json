@@ -1,0 +1,280 @@
+{
+  "image_gan": {
+    "checkpoint_path": "outputs/phase7_audit_pathmnist_clean/image_gan_checkpoint.pt",
+    "config": {
+      "batch_size": 64,
+      "device": "cpu",
+      "discriminator_channels": [
+        16,
+        32
+      ],
+      "discriminator_learning_rate": 0.0002,
+      "epochs": 2,
+      "generator_channels": [
+        32,
+        16
+      ],
+      "generator_learning_rate": 0.0002,
+      "image_shape": [
+        28,
+        28,
+        3
+      ],
+      "latent_dim": 32,
+      "seed": 2043,
+      "stability_patience": 2
+    },
+    "status": "trained",
+    "training": {
+      "checkpoint_path": "outputs/phase7_audit_pathmnist_clean/image_gan_checkpoint.pt",
+      "device": "cpu",
+      "epochs_ran": 2,
+      "failed": false,
+      "failure_reason": null,
+      "history": {
+        "discriminator_loss": [
+          0.6723139137029648,
+          0.6318632960319519
+        ],
+        "generator_loss": [
+          0.8393047004938126,
+          0.8997741341590881
+        ],
+        "sample_std": [
+          0.044104672968387604,
+          0.055092185735702515
+        ]
+      },
+      "wall_seconds": 0.2571736671961844
+    },
+    "validation_evaluation": {
+      "duplicate_fraction": 0.0,
+      "feature_mmd": 0.5660452842712402,
+      "generation_seconds": 0.0007372088730335236,
+      "gradient_mean_abs_error": 0.005578368902206421,
+      "gradient_std_abs_error": 0.014126740396022797,
+      "local_patch_std_abs_error": 0.012279495596885681,
+      "model_name": "image_gan",
+      "nearest_neighbor_mean": 7.276846885681152,
+      "nearest_neighbor_min": 6.932896137237549,
+      "notes": [
+        "Reconstruction metrics evaluate autoencoding behavior, not unconditional generation quality.",
+        "Nearest-neighbor diagnostics are memorization proxies, not privacy guarantees.",
+        "Selection score is validation-only and combines pixel and simple gradient summary errors with a duplicate penalty; it does not use VAE ELBO or GAN discriminator loss.",
+        "The handcrafted feature MMD is not a validated pathology quality metric and is not clinically meaningful by itself.",
+        "No numeric threshold in this report establishes adequate image quality for clinical use or external release."
+      ],
+      "pairwise_distance_mean_abs_error": 0.13231179863214493,
+      "pixel_mean_abs_error": 0.12800127267837524,
+      "pixel_mean_generated": 0.5075337290763855,
+      "pixel_mean_real": 0.6355350017547607,
+      "pixel_std_abs_error": 0.11699085310101509,
+      "pixel_std_generated": 0.05628117546439171,
+      "pixel_std_real": 0.1732720285654068,
+      "reconstruction_mse": null,
+      "selection_score": 0.6489514617236055
+    },
+    "validation_reliability": {
+      "n_generation_seeds": 2,
+      "practical_difference_threshold": 0.01,
+      "selection_score_max": 0.6489514617236055,
+      "selection_score_mean": 0.6466717307593186,
+      "selection_score_min": 0.6443919997950317,
+      "selection_score_std": 0.002279730964286908
+    },
+    "validation_repeated_evaluations": [
+      {
+        "duplicate_fraction": 0.0,
+        "feature_mmd": 0.5660452842712402,
+        "generation_seconds": 0.0007372088730335236,
+        "gradient_mean_abs_error": 0.005578368902206421,
+        "gradient_std_abs_error": 0.014126740396022797,
+        "local_patch_std_abs_error": 0.012279495596885681,
+        "model_name": "image_gan",
+        "nearest_neighbor_mean": 7.276846885681152,
+        "nearest_neighbor_min": 6.932896137237549,
+        "notes": [
+          "Reconstruction metrics evaluate autoencoding behavior, not unconditional generation quality.",
+          "Nearest-neighbor diagnostics are memorization proxies, not privacy guarantees.",
+          "Selection score is validation-only and combines pixel and simple gradient summary errors with a duplicate penalty; it does not use VAE ELBO or GAN discriminator loss.",
+          "The handcrafted feature MMD is not a validated pathology quality metric and is not clinically meaningful by itself.",
+          "No numeric threshold in this report establishes adequate image quality for clinical use or external release."
+        ],
+        "pairwise_distance_mean_abs_error": 0.13231179863214493,
+        "pixel_mean_abs_error": 0.12800127267837524,
+        "pixel_mean_generated": 0.5075337290763855,
+        "pixel_mean_real": 0.6355350017547607,
+        "pixel_std_abs_error": 0.11699085310101509,
+        "pixel_std_generated": 0.05628117546439171,
+        "pixel_std_real": 0.1732720285654068,
+        "reconstruction_mse": null,
+        "selection_score": 0.6489514617236055
+      },
+      {
+        "duplicate_fraction": 0.0,
+        "feature_mmd": 0.5788407325744629,
+        "generation_seconds": 0.0012805410660803318,
+        "gradient_mean_abs_error": 0.002693258225917816,
+        "gradient_std_abs_error": 0.01689976453781128,
+        "local_patch_std_abs_error": 0.01460268348455429,
+        "model_name": "image_gan",
+        "nearest_neighbor_mean": 7.218400001525879,
+        "nearest_neighbor_min": 6.987932205200195,
+        "notes": [
+          "Reconstruction metrics evaluate autoencoding behavior, not unconditional generation quality.",
+          "Nearest-neighbor diagnostics are memorization proxies, not privacy guarantees.",
+          "Selection score is validation-only and combines pixel and simple gradient summary errors with a duplicate penalty; it does not use VAE ELBO or GAN discriminator loss.",
+          "The handcrafted feature MMD is not a validated pathology quality metric and is not clinically meaningful by itself.",
+          "No numeric threshold in this report establishes adequate image quality for clinical use or external release."
+        ],
+        "pairwise_distance_mean_abs_error": 0.1354021430015564,
+        "pixel_mean_abs_error": 0.12813127040863037,
+        "pixel_mean_generated": 0.5074037313461304,
+        "pixel_mean_real": 0.6355350017547607,
+        "pixel_std_abs_error": 0.11920763552188873,
+        "pixel_std_generated": 0.054064393043518066,
+        "pixel_std_real": 0.1732720285654068,
+        "reconstruction_mse": null,
+        "selection_score": 0.6443919997950317
+      }
+    ]
+  },
+  "image_vae": {
+    "checkpoint_path": "outputs/phase7_audit_pathmnist_clean/image_vae_checkpoint.pt",
+    "config": {
+      "batch_size": 64,
+      "device": "cpu",
+      "early_stopping_patience": 3,
+      "epochs": 2,
+      "hidden_channels": [
+        16,
+        32
+      ],
+      "image_shape": [
+        28,
+        28,
+        3
+      ],
+      "kl_weight": 1.0,
+      "latent_dim": 16,
+      "learning_rate": 0.001,
+      "reconstruction_assumption": "gaussian_unit_variance",
+      "seed": 2026
+    },
+    "status": "trained",
+    "training": {
+      "best_validation_loss": 2210.557373046875,
+      "checkpoint_path": "outputs/phase7_audit_pathmnist_clean/image_vae_checkpoint.pt",
+      "device": "cpu",
+      "epochs_ran": 2,
+      "failed": false,
+      "failure_reason": null,
+      "history": {
+        "train_loss": [
+          2220.2853393554688,
+          2217.2435913085938
+        ],
+        "validation_loss": [
+          2213.208251953125,
+          2210.557373046875
+        ],
+        "validation_reconstruction": [
+          2213.189453125,
+          2210.499755859375
+        ]
+      },
+      "wall_seconds": 0.1301400000229478
+    },
+    "validation_evaluation": {
+      "duplicate_fraction": 0.0,
+      "feature_mmd": 0.575106143951416,
+      "generation_seconds": 0.0009151250123977661,
+      "gradient_mean_abs_error": 0.017375580966472626,
+      "gradient_std_abs_error": 0.03229660727083683,
+      "local_patch_std_abs_error": 0.03187942132353783,
+      "model_name": "image_vae",
+      "nearest_neighbor_mean": 5.754234313964844,
+      "nearest_neighbor_min": 5.696342468261719,
+      "notes": [
+        "Reconstruction metrics evaluate autoencoding behavior, not unconditional generation quality.",
+        "Nearest-neighbor diagnostics are memorization proxies, not privacy guarantees.",
+        "Selection score is validation-only and combines pixel and simple gradient summary errors with a duplicate penalty; it does not use VAE ELBO or GAN discriminator loss.",
+        "The handcrafted feature MMD is not a validated pathology quality metric and is not clinically meaningful by itself.",
+        "No numeric threshold in this report establishes adequate image quality for clinical use or external release."
+      ],
+      "pairwise_distance_mean_abs_error": 0.16409293562173843,
+      "pixel_mean_abs_error": 0.11223369836807251,
+      "pixel_mean_generated": 0.5233013033866882,
+      "pixel_mean_real": 0.6355350017547607,
+      "pixel_std_abs_error": 0.1436540950089693,
+      "pixel_std_generated": 0.029617933556437492,
+      "pixel_std_real": 0.1732720285654068,
+      "reconstruction_mse": 0.041801873594522476,
+      "selection_score": 0.6171038551695817
+    },
+    "validation_reliability": {
+      "n_generation_seeds": 2,
+      "practical_difference_threshold": 0.01,
+      "selection_score_max": 0.6171038551695817,
+      "selection_score_mean": 0.6155783894224072,
+      "selection_score_min": 0.6140529236752328,
+      "selection_score_std": 0.001525465747174437
+    },
+    "validation_repeated_evaluations": [
+      {
+        "duplicate_fraction": 0.0,
+        "feature_mmd": 0.575106143951416,
+        "generation_seconds": 0.0009151250123977661,
+        "gradient_mean_abs_error": 0.017375580966472626,
+        "gradient_std_abs_error": 0.03229660727083683,
+        "local_patch_std_abs_error": 0.03187942132353783,
+        "model_name": "image_vae",
+        "nearest_neighbor_mean": 5.754234313964844,
+        "nearest_neighbor_min": 5.696342468261719,
+        "notes": [
+          "Reconstruction metrics evaluate autoencoding behavior, not unconditional generation quality.",
+          "Nearest-neighbor diagnostics are memorization proxies, not privacy guarantees.",
+          "Selection score is validation-only and combines pixel and simple gradient summary errors with a duplicate penalty; it does not use VAE ELBO or GAN discriminator loss.",
+          "The handcrafted feature MMD is not a validated pathology quality metric and is not clinically meaningful by itself.",
+          "No numeric threshold in this report establishes adequate image quality for clinical use or external release."
+        ],
+        "pairwise_distance_mean_abs_error": 0.16409293562173843,
+        "pixel_mean_abs_error": 0.11223369836807251,
+        "pixel_mean_generated": 0.5233013033866882,
+        "pixel_mean_real": 0.6355350017547607,
+        "pixel_std_abs_error": 0.1436540950089693,
+        "pixel_std_generated": 0.029617933556437492,
+        "pixel_std_real": 0.1732720285654068,
+        "reconstruction_mse": 0.041801873594522476,
+        "selection_score": 0.6171038551695817
+      },
+      {
+        "duplicate_fraction": 0.0,
+        "feature_mmd": 0.5804368257522583,
+        "generation_seconds": 0.0007958752103149891,
+        "gradient_mean_abs_error": 0.019036438316106796,
+        "gradient_std_abs_error": 0.033677201718091965,
+        "local_patch_std_abs_error": 0.03327484428882599,
+        "model_name": "image_vae",
+        "nearest_neighbor_mean": 5.755395889282227,
+        "nearest_neighbor_min": 5.664710521697998,
+        "notes": [
+          "Reconstruction metrics evaluate autoencoding behavior, not unconditional generation quality.",
+          "Nearest-neighbor diagnostics are memorization proxies, not privacy guarantees.",
+          "Selection score is validation-only and combines pixel and simple gradient summary errors with a duplicate penalty; it does not use VAE ELBO or GAN discriminator loss.",
+          "The handcrafted feature MMD is not a validated pathology quality metric and is not clinically meaningful by itself.",
+          "No numeric threshold in this report establishes adequate image quality for clinical use or external release."
+        ],
+        "pairwise_distance_mean_abs_error": 0.1657805871218443,
+        "pixel_mean_abs_error": 0.11298471689224243,
+        "pixel_mean_generated": 0.5225502848625183,
+        "pixel_mean_real": 0.6355350017547607,
+        "pixel_std_abs_error": 0.1450179498642683,
+        "pixel_std_generated": 0.028254078701138496,
+        "pixel_std_real": 0.1732720285654068,
+        "reconstruction_mse": 0.041818179190158844,
+        "selection_score": 0.6140529236752328
+      }
+    ]
+  }
+}

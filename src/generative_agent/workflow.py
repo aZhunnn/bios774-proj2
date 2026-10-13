@@ -560,7 +560,7 @@ def _render_report(
 ) -> str:
     return "\n".join(
         [
-            "# Phase 2.5 Tabular VAE Report",
+            "# Project 2 Tabular Generative Agent Report",
             "",
             "## Scope",
             "This report is generated from stored workflow results for unconditional tabular synthetic data generation.",
@@ -574,7 +574,7 @@ def _render_report(
             "- Cross-family selection uses the predeclared validation selection_score among eligible methods; held-out test data is used only for final evaluation.",
             "- RealNVP flow is available only for continuous tabular features with no missing values.",
             "- GMM and Gaussian copula are available only for continuous tabular features with no missing values.",
-            "- Conditional generation, class balancing, image generation, GANs, and diffusion are not implemented.",
+            "- Conditional generation, imputation, formal privacy mechanisms, Bayesian decision-making, diffusion, and Project 4 integration are not implemented.",
             "",
             "## Selected Configuration",
             f"```json\n{json.dumps(config.to_dict() if config else {'method': 'training_row_bootstrap'}, indent=2)}\n```",

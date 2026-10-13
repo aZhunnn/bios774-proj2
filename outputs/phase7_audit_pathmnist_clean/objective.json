@@ -1,0 +1,7 @@
+{
+  "constraints": {
+    "use_case": "internal_testing"
+  },
+  "text": "Generate synthetic images for internal testing.",
+  "type": "data_generation"
+}
