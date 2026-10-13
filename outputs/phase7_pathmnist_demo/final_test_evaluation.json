@@ -1,0 +1,27 @@
+{
+  "duplicate_fraction": 0.0,
+  "feature_mmd": 0.5694864988327026,
+  "generation_seconds": 0.0009792917408049107,
+  "gradient_mean_abs_error": 0.0021072030067443848,
+  "gradient_std_abs_error": 0.020626109093427658,
+  "local_patch_std_abs_error": 0.023510418832302094,
+  "model_name": "image_gan",
+  "nearest_neighbor_mean": 7.258845329284668,
+  "nearest_neighbor_min": 7.008190631866455,
+  "notes": [
+    "Reconstruction metrics evaluate autoencoding behavior, not unconditional generation quality.",
+    "Nearest-neighbor diagnostics are memorization proxies, not privacy guarantees.",
+    "Selection score is validation-only and combines pixel and simple gradient summary errors with a duplicate penalty; it does not use VAE ELBO or GAN discriminator loss.",
+    "The handcrafted feature MMD is not a validated pathology quality metric and is not clinically meaningful by itself.",
+    "No numeric threshold in this report establishes adequate image quality for clinical use or external release."
+  ],
+  "pairwise_distance_mean_abs_error": 0.15417227894067764,
+  "pixel_mean_abs_error": 0.12890154123306274,
+  "pixel_mean_generated": 0.5075581073760986,
+  "pixel_mean_real": 0.6364596486091614,
+  "pixel_std_abs_error": 0.12972337007522583,
+  "pixel_std_generated": 0.055397436022758484,
+  "pixel_std_real": 0.18512080609798431,
+  "reconstruction_mse": null,
+  "selection_score": 0.6289126662255777
+}

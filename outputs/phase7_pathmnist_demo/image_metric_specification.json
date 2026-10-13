@@ -1,0 +1,65 @@
+{
+  "duplicate_fraction": {
+    "definition": "1 - unique rounded generated images / generated images",
+    "direction": "lower is better",
+    "limitations": "zero duplicates does not imply privacy",
+    "normalization": "generated images rounded to 8-bit pixel values",
+    "sample_count_sensitivity": "more reliable with larger generated batches"
+  },
+  "feature_mmd": {
+    "definition": "RBF-kernel MMD on handcrafted image summaries: channel means/stds, gradient summaries, local patch std, and quadrant means",
+    "direction": "lower is better",
+    "limitations": "handcrafted features are not a validated pathology quality metric",
+    "normalization": "features are standardized using validation-feature mean/std",
+    "sample_count_sensitivity": "high for small batches; use repeated generation seeds"
+  },
+  "gradient_mean_abs_error": {
+    "definition": "absolute error in mean finite-difference gradient magnitude",
+    "direction": "lower is better",
+    "limitations": "detects edge amount, not medically meaningful structure",
+    "normalization": "computed on [0, 1] pixels",
+    "sample_count_sensitivity": "moderate; stabilizes with more images and pixels"
+  },
+  "gradient_std_abs_error": {
+    "definition": "absolute error in std of finite-difference gradient magnitude",
+    "direction": "lower is better",
+    "limitations": "does not validate semantic features",
+    "normalization": "computed on [0, 1] pixels",
+    "sample_count_sensitivity": "moderate; noisy for tiny image samples"
+  },
+  "local_patch_std_abs_error": {
+    "definition": "absolute error in average 4x4 patch-level pixel standard deviation",
+    "direction": "lower is better",
+    "limitations": "penalizes overly smooth images but does not identify realistic tissue morphology",
+    "normalization": "computed on [0, 1] pixels",
+    "sample_count_sensitivity": "sensitive to image size and local texture diversity"
+  },
+  "pairwise_distance_mean_abs_error": {
+    "definition": "absolute error in mean pairwise Euclidean distance between images",
+    "direction": "lower is better",
+    "limitations": "measures diversity scale, not sample usefulness",
+    "normalization": "distances are divided by sqrt(number of pixels)",
+    "sample_count_sensitivity": "high for small generated batches"
+  },
+  "pixel_mean_abs_error": {
+    "definition": "|mean(generated pixels) - mean(validation pixels)|",
+    "direction": "lower is better",
+    "limitations": "can favor bland images if used alone",
+    "normalization": "pixels are expected on [0, 1]",
+    "sample_count_sensitivity": "global means stabilize quickly but can hide poor local structure"
+  },
+  "pixel_std_abs_error": {
+    "definition": "|std(generated pixels) - std(validation pixels)|",
+    "direction": "lower is better",
+    "limitations": "global variance does not prove realistic spatial organization",
+    "normalization": "pixels are expected on [0, 1]",
+    "sample_count_sensitivity": "sensitive to small sample batches and class mix"
+  },
+  "selection_score": {
+    "definition": "1 / (1 + weighted error sum) using validation-only metrics",
+    "direction": "higher is better for relative ranking",
+    "limitations": "heuristic ranking score; no threshold establishes clinical or release quality",
+    "normalization": "bounded in (0, 1], but not calibrated as probability or quality acceptance",
+    "sample_count_sensitivity": "depends on generated sample count and random seed"
+  }
+}

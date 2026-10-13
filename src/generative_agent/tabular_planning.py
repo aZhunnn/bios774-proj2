@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+import hashlib
+import json
 from typing import Mapping
 
 import numpy as np
@@ -51,6 +53,7 @@ class TabularTrainingPlan:
     allocated_models: tuple[str, ...]
     skipped_models: dict[str, str]
     planning_rule: str
+    prior_evidence_status: dict[str, object]
 
     def to_dict(self) -> dict[str, object]:
         payload = asdict(self)
@@ -67,11 +70,22 @@ def build_tabular_training_plan(
     use_case: ObjectiveUseCase | str,
     budget: ExperimentBudget,
     prior_validation_scores: Mapping[str, float] | None = None,
+    prior_evidence: Mapping[str, object] | None = None,
+    enable_prior_evidence: bool = False,
+    evaluation_protocol: str = "tabular_selection_score_v1",
 ) -> TabularTrainingPlan:
     if isinstance(use_case, str):
         use_case = ObjectiveUseCase(use_case)
     stats = profile_tabular_training_data(train_frame, schema)
-    priors = dict(prior_validation_scores or {})
+    fingerprint = tabular_dataset_fingerprint(train_frame, schema)
+    priors, prior_status = _resolve_prior_evidence(
+        prior_validation_scores=prior_validation_scores,
+        prior_evidence=prior_evidence,
+        enable_prior_evidence=enable_prior_evidence,
+        dataset_fingerprint=fingerprint,
+        objective_type=objective_type,
+        evaluation_protocol=evaluation_protocol,
+    )
     candidates = tuple(
         sorted(
             (
@@ -112,6 +126,7 @@ def build_tabular_training_plan(
             "budget, eligibility, and optional prior validation evidence; allocate max_models total "
             "trained candidates by priority."
         ),
+        prior_evidence_status=prior_status,
     )
 
 
@@ -144,6 +159,84 @@ def profile_tabular_training_data(train_frame: pd.DataFrame, schema: TabularVaeS
         max_abs_correlation=max_abs_correlation,
         sample_feature_ratio=float(len(train_frame) / max(n_features, 1)),
     )
+
+
+def tabular_dataset_fingerprint(train_frame: pd.DataFrame, schema: TabularVaeSchema) -> str:
+    frame = train_frame[list(schema.model_columns)].copy()
+    payload = {
+        "columns": list(schema.model_columns),
+        "shape": frame.shape,
+        "summary": {
+            column: {
+                "mean": float(frame[column].astype(float).mean()) if column in schema.continuous else None,
+                "std": float(frame[column].astype(float).std(ddof=0)) if column in schema.continuous else None,
+                "unique": int(frame[column].nunique(dropna=False)),
+            }
+            for column in schema.model_columns
+        },
+    }
+    digest = hashlib.sha256(json.dumps(payload, sort_keys=True).encode("utf-8"))
+    return digest.hexdigest()
+
+
+def _resolve_prior_evidence(
+    *,
+    prior_validation_scores: Mapping[str, float] | None,
+    prior_evidence: Mapping[str, object] | None,
+    enable_prior_evidence: bool,
+    dataset_fingerprint: str,
+    objective_type: ObjectiveType,
+    evaluation_protocol: str,
+) -> tuple[dict[str, float], dict[str, object]]:
+    if prior_validation_scores and not prior_evidence:
+        return {}, {
+            "used": False,
+            "reason": "Raw prior_validation_scores are ignored unless provenance-checked prior_evidence is provided.",
+            "dataset_fingerprint": dataset_fingerprint,
+        }
+    if not prior_evidence:
+        return {}, {
+            "used": False,
+            "reason": "Prior evidence reuse is disabled by default and no prior evidence was provided.",
+            "dataset_fingerprint": dataset_fingerprint,
+        }
+    if not enable_prior_evidence:
+        return {}, {
+            "used": False,
+            "reason": "Prior evidence was provided but reuse is disabled by default.",
+            "dataset_fingerprint": dataset_fingerprint,
+        }
+    required = {
+        "dataset_fingerprint": dataset_fingerprint,
+        "objective_type": objective_type.value,
+        "evaluation_protocol": evaluation_protocol,
+        "source_split": "validation",
+    }
+    mismatches = {
+        key: {"expected": expected, "observed": prior_evidence.get(key)}
+        for key, expected in required.items()
+        if prior_evidence.get(key) != expected
+    }
+    if mismatches:
+        return {}, {
+            "used": False,
+            "reason": "Prior evidence provenance is incompatible.",
+            "mismatches": mismatches,
+            "dataset_fingerprint": dataset_fingerprint,
+        }
+    scores = prior_evidence.get("scores", {})
+    if not isinstance(scores, Mapping):
+        return {}, {
+            "used": False,
+            "reason": "Prior evidence scores must be a mapping.",
+            "dataset_fingerprint": dataset_fingerprint,
+        }
+    return {str(key): float(value) for key, value in scores.items()}, {
+        "used": True,
+        "reason": "Prior validation evidence passed provenance checks.",
+        "dataset_fingerprint": dataset_fingerprint,
+        "evaluation_protocol": evaluation_protocol,
+    }
 
 
 def _candidate_priority(

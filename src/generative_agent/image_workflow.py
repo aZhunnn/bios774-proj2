@@ -60,6 +60,26 @@ def run_image_generation_workflow(
     candidates = _plan_candidates(image_shape=image_shape, budget=selected_budget, latent_dim=latent_dim, gan_latent_dim=gan_latent_dim)
     if not candidates:
         raise ValueError("No feasible image-generation candidates fit the requested budget.")
+    planning = {
+        "planning_rule": "Rank implemented feasible image candidates by deterministic capability rules; allocate up to max_models total trained candidates; evaluate validation before held-out test.",
+        "modality": "image",
+        "dataset_profile": bundle.profile.to_dict(),
+        "candidate_priorities": [
+            {
+                "model": candidate["name"],
+                "priority_score": candidate["priority_score"],
+                "feasible": True,
+                "eligible_before_objective_filter": True,
+                "reasons": candidate["reasons"],
+            }
+            for candidate in candidates
+        ],
+        "allocated_models": [candidate["name"] for candidate in candidates[: selected_budget.max_models]],
+        "budget": {
+            "max_trained_candidates": selected_budget.max_models,
+            "semantics": "max_models is the total number of trained image candidates across model families.",
+        },
+    }
 
     candidate_records: dict[str, dict[str, object]] = {}
     validation_scores: dict[str, dict[str, float]] = {}
@@ -119,6 +139,7 @@ def run_image_generation_workflow(
     store.save_json("dataset_profile", bundle.profile.to_dict(), kind="profile")
     store.save_json("preprocessing", bundle.preprocessing, kind="preprocessing")
     store.save_json("objective", {"text": objective_text, "type": objective.objective_type.value, "constraints": dict(objective.constraints)}, kind="objective")
+    store.save_json("planning", planning, kind="planning")
     store.save_json("candidate_results", candidate_records, kind="candidate_results")
     store.save_json("image_metric_specification", image_metric_specification(), kind="metric_specification")
     store.save_json("model_config", selected_record["config"], kind="model")
@@ -127,6 +148,7 @@ def run_image_generation_workflow(
     store.save_json("final_test_evaluation", final_test_evaluation.to_dict(), kind="test_evaluation")
     decisions = {
         "architecture": "Inspect -> Interpret -> Check Eligibility -> Plan -> Execute -> Evaluate -> Reflect -> Report",
+        "planning": planning,
         "eligibility": eligibility.to_dict(),
         "labels": "metadata_only_not_conditioning",
         "reconstruction_assumption": config.reconstruction_assumption,
@@ -158,6 +180,11 @@ def _plan_candidates(*, image_shape: tuple[int, int, int], budget: ExperimentBud
             planned.append(
                 {
                     "name": "image_vae",
+                    "priority_score": 0.65,
+                    "reasons": (
+                        "Image VAE supports small-image unconditional generation and reconstruction diagnostics.",
+                        "VAE is prioritized for CPU smoke tests because training is stable and deterministic.",
+                    ),
                     "reason": "VAE supports unconditional small-image generation and reconstruction diagnostics.",
                     "config": ImageVaeConfig(
                         image_shape=image_shape,
@@ -172,6 +199,11 @@ def _plan_candidates(*, image_shape: tuple[int, int, int], budget: ExperimentBud
             planned.append(
                 {
                     "name": "image_gan",
+                    "priority_score": 0.55,
+                    "reasons": (
+                        "GAN supports small-image unconditional generation.",
+                        "GAN is lower priority under small CPU budgets because adversarial quality evidence is less stable.",
+                    ),
                     "reason": "GAN supports unconditional small-image generation with adversarial training.",
                     "config": ImageGanConfig(
                         image_shape=image_shape,
@@ -182,7 +214,7 @@ def _plan_candidates(*, image_shape: tuple[int, int, int], budget: ExperimentBud
                     ),
                 }
             )
-    return planned
+    return sorted(planned, key=lambda item: (-item["priority_score"], item["name"]))
 
 
 def _train_and_evaluate_candidate(

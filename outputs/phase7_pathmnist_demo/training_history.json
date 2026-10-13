@@ -1,0 +1,22 @@
+{
+  "checkpoint_path": "outputs/phase7_pathmnist_demo/image_gan_checkpoint.pt",
+  "device": "cpu",
+  "epochs_ran": 2,
+  "failed": false,
+  "failure_reason": null,
+  "history": {
+    "discriminator_loss": [
+      0.6723139137029648,
+      0.6318632960319519
+    ],
+    "generator_loss": [
+      0.8393047004938126,
+      0.8997741341590881
+    ],
+    "sample_std": [
+      0.044104672968387604,
+      0.055092185735702515
+    ]
+  },
+  "wall_seconds": 0.271227709017694
+}
