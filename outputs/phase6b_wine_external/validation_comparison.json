@@ -1,0 +1,147 @@
+{
+  "decision_rule": "Select the method with the highest validation selection_score from synthetic-vs-validation evaluation. VAE ELBO and flow NLL are used only within their own family searches.",
+  "eligibility": {
+    "eligible_methods": [
+      "flow",
+      "gmm"
+    ],
+    "method_eligibility": [
+      {
+        "eligible": false,
+        "limitations": [
+          "Bootstrap can duplicate training rows and has nearest-neighbor distance 0 by construction."
+        ],
+        "method": "baseline",
+        "reasons": [
+          "Exact-record bootstrap resampling is not eligible for external synthetic-data sharing."
+        ]
+      },
+      {
+        "eligible": true,
+        "limitations": [
+          "Requires disclosure that no formal privacy guarantee is implemented."
+        ],
+        "method": "flow",
+        "reasons": [
+          "Model-generated samples may be considered for external sharing only without claiming privacy guarantees."
+        ]
+      },
+      {
+        "eligible": true,
+        "limitations": [
+          "Requires disclosure that no formal privacy guarantee is implemented."
+        ],
+        "method": "gmm",
+        "reasons": [
+          "Model-generated samples may be considered for external sharing only without claiming privacy guarantees."
+        ]
+      }
+    ],
+    "ranking_metric": "selection_score",
+    "rejected_methods": [
+      "baseline"
+    ],
+    "selected_method": "flow",
+    "selection_reason": "Selected highest selection_score among eligible methods; hard eligibility rules were applied before ranking.",
+    "use_case": "external_sharing"
+  },
+  "metric_definition": "selection_score = 0.45 train-scale-normalized marginal fidelity + 0.35 dependence preservation + 0.20 legacy marginal fidelity when correlations are valid; without correlations, 0.75 normalized marginal + 0.25 legacy marginal.",
+  "metric_direction": "higher selection_score is better",
+  "objective_recommendation": {
+    "adequacy_claim": false,
+    "adequacy_warning_threshold": 0.85,
+    "eligibility_summary": {
+      "eligible_methods": [
+        "flow",
+        "gmm"
+      ],
+      "method_eligibility": [
+        {
+          "eligible": false,
+          "limitations": [
+            "Bootstrap can duplicate training rows and has nearest-neighbor distance 0 by construction."
+          ],
+          "method": "baseline",
+          "reasons": [
+            "Exact-record bootstrap resampling is not eligible for external synthetic-data sharing."
+          ]
+        },
+        {
+          "eligible": true,
+          "limitations": [
+            "Requires disclosure that no formal privacy guarantee is implemented."
+          ],
+          "method": "flow",
+          "reasons": [
+            "Model-generated samples may be considered for external sharing only without claiming privacy guarantees."
+          ]
+        },
+        {
+          "eligible": true,
+          "limitations": [
+            "Requires disclosure that no formal privacy guarantee is implemented."
+          ],
+          "method": "gmm",
+          "reasons": [
+            "Model-generated samples may be considered for external sharing only without claiming privacy guarantees."
+          ]
+        }
+      ],
+      "ranking_metric": "selection_score",
+      "rejected_methods": [
+        "baseline"
+      ],
+      "selected_method": "flow",
+      "selection_reason": "Selected highest selection_score among eligible methods; hard eligibility rules were applied before ranking.",
+      "use_case": "external_sharing"
+    },
+    "language_guardrail": "Eligibility and high relative fidelity do not establish privacy, safety, clinical utility, or external-release suitability.",
+    "reasons": [
+      "Selected method ranked highest among eligible validation candidates.",
+      "External sharing excludes exact-record bootstrap and still requires disclosure that no formal privacy guarantee is implemented."
+    ],
+    "recommendation": "consider_selected_with_limitations",
+    "relative_ranking": [
+      "baseline",
+      "flow",
+      "gmm"
+    ],
+    "selected_family": "flow",
+    "selected_validation_score": 0.8829950397244746,
+    "use_case": "external_sharing"
+  },
+  "sample_count": 734,
+  "scores": {
+    "baseline": {
+      "data_generation_fidelity": 0.7120288033647164,
+      "dependence_preservation": 0.966044913283156,
+      "duplicate_fraction": 0.1539509536784741,
+      "nearest_neighbor_mean": 0.0,
+      "selection_score": 0.9125376457832101,
+      "train_scale_normalized_marginal_fidelity": 0.9600359232470271
+    },
+    "flow": {
+      "data_generation_fidelity": 0.6843117865424767,
+      "dependence_preservation": 0.9335511167232102,
+      "duplicate_fraction": 0.0,
+      "nearest_neighbor_mean": 1.5071339571278755,
+      "selection_score": 0.8829950397244746,
+      "train_scale_normalized_marginal_fidelity": 0.9319773145841236
+    },
+    "gmm": {
+      "data_generation_fidelity": 0.6375065034413024,
+      "dependence_preservation": 0.9732418746064648,
+      "duplicate_fraction": 0.0,
+      "nearest_neighbor_mean": 1.711595127072366,
+      "selection_score": 0.8595421279654413,
+      "train_scale_normalized_marginal_fidelity": 0.8697914914775958
+    }
+  },
+  "seeds": {
+    "baseline": 2033,
+    "copula": 2045,
+    "flow": 2039,
+    "gmm": 2043,
+    "vae": 2037
+  }
+}

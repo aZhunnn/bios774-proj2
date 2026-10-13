@@ -1,0 +1,374 @@
+{
+  "baseline": {
+    "correlation_l1": 0.032526009379635484,
+    "dependence_preservation_score": 0.968498605280483,
+    "duplicate_fraction": 0.178,
+    "feature_differences": {
+      "alcohol": {
+        "absolute_mean_difference": 0.06542448979591775,
+        "absolute_median_difference": 0.0,
+        "iqr_difference": 0.0,
+        "synthetic_mean": 10.4858,
+        "synthetic_std": 1.217519803169998,
+        "test_mean": 10.551224489795917,
+        "test_std": 1.2455696169595525
+      },
+      "chlorides": {
+        "absolute_mean_difference": 0.0004444761904761965,
+        "absolute_median_difference": 0.000999999999999994,
+        "iqr_difference": 0.0010000000000000009,
+        "synthetic_mean": 0.045854000000000006,
+        "synthetic_std": 0.022199609996574266,
+        "test_mean": 0.04540952380952381,
+        "test_std": 0.021792020424802546
+      },
+      "citric acid": {
+        "absolute_mean_difference": 0.009914353741496573,
+        "absolute_median_difference": 0.010000000000000009,
+        "iqr_difference": 0.0,
+        "synthetic_mean": 0.33703,
+        "synthetic_std": 0.12878928177453278,
+        "test_mean": 0.3271156462585034,
+        "test_std": 0.11298236073311288
+      },
+      "density": {
+        "absolute_mean_difference": 0.00023349455782306627,
+        "absolute_median_difference": 0.00023999999999990695,
+        "iqr_difference": 0.00012000000000000899,
+        "synthetic_mean": 0.9940851,
+        "synthetic_std": 0.002890006019024873,
+        "test_mean": 0.993851605442177,
+        "test_std": 0.0029466864373343797
+      },
+      "fixed acidity": {
+        "absolute_mean_difference": 0.08336598639455772,
+        "absolute_median_difference": 0.09999999999999964,
+        "iqr_difference": 0.09999999999999964,
+        "synthetic_mean": 6.8584,
+        "synthetic_std": 0.8467286696457136,
+        "test_mean": 6.775034013605442,
+        "test_std": 0.8074604298551417
+      },
+      "free sulfur dioxide": {
+        "absolute_mean_difference": 1.2125952380952398,
+        "absolute_median_difference": 1.0,
+        "iqr_difference": 0.0,
+        "synthetic_mean": 34.9745,
+        "synthetic_std": 16.208149177188616,
+        "test_mean": 33.76190476190476,
+        "test_std": 16.253302472723544
+      },
+      "pH": {
+        "absolute_mean_difference": 0.010190544217687059,
+        "absolute_median_difference": 0.0,
+        "iqr_difference": 4.440892098500626e-16,
+        "synthetic_mean": 3.1851700000000003,
+        "synthetic_std": 0.1468889754202132,
+        "test_mean": 3.1953605442176873,
+        "test_std": 0.15403718720452117
+      },
+      "residual sugar": {
+        "absolute_mean_difference": 0.40390102040816256,
+        "absolute_median_difference": 1.0,
+        "iqr_difference": 0.4999999999999991,
+        "synthetic_mean": 6.64635,
+        "synthetic_std": 5.024531737137303,
+        "test_mean": 6.242448979591837,
+        "test_std": 5.063269169496232
+      },
+      "sulphates": {
+        "absolute_mean_difference": 0.006312176870748365,
+        "absolute_median_difference": 0.019999999999999962,
+        "iqr_difference": 5.551115123125783e-17,
+        "synthetic_mean": 0.49087000000000003,
+        "synthetic_std": 0.11657848472166724,
+        "test_mean": 0.48455782312925166,
+        "test_std": 0.11038480185068494
+      },
+      "total sulfur dioxide": {
+        "absolute_mean_difference": 3.5697925170068174,
+        "absolute_median_difference": 3.0,
+        "iqr_difference": 6.5,
+        "synthetic_mean": 137.8385,
+        "synthetic_std": 42.54023586852804,
+        "test_mean": 134.2687074829932,
+        "test_std": 40.114287075568235
+      },
+      "volatile acidity": {
+        "absolute_mean_difference": 0.0077718707482993254,
+        "absolute_median_difference": 0.0,
+        "iqr_difference": 2.7755575615628914e-17,
+        "synthetic_mean": 0.282595,
+        "synthetic_std": 0.10781275886925443,
+        "test_mean": 0.27482312925170066,
+        "test_std": 0.09522423951688104
+      }
+    },
+    "marginal_fidelity_score": 0.652144190630799,
+    "method": "training_row_bootstrap",
+    "nearest_neighbor_mean": 0.0,
+    "nearest_neighbor_min": 0.0,
+    "notes": [
+      "Nearest-neighbor distances are memorization proxies, not formal privacy guarantees.",
+      "Bootstrap baseline is evaluated with the same metrics for fairness.",
+      "Selection score is 0.45 train-scale-normalized marginal fidelity, 0.35 dependence preservation when valid, and 0.20 legacy marginal fidelity."
+    ],
+    "objective_metrics": {
+      "data_generation_fidelity": 0.652144190630799,
+      "dependence_preservation": 0.968498605280483,
+      "selection_score": 0.8941412553003947,
+      "train_scale_normalized_marginal_fidelity": 0.943862011835702
+    },
+    "selection_score": 0.8941412553003947,
+    "train_scale_normalized_marginal_fidelity": 0.943862011835702,
+    "unique_fraction": 0.8220000000000001
+  },
+  "flow": {
+    "correlation_l1": 0.0709900583756309,
+    "dependence_preservation_score": 0.9337154833320289,
+    "duplicate_fraction": 0.0,
+    "feature_differences": {
+      "alcohol": {
+        "absolute_mean_difference": 0.07125833188270825,
+        "absolute_median_difference": 0.084759616851807,
+        "iqr_difference": 0.29206051826477086,
+        "synthetic_mean": 10.479966157913209,
+        "synthetic_std": 1.1799509535539652,
+        "test_mean": 10.551224489795917,
+        "test_std": 1.2455696169595525
+      },
+      "chlorides": {
+        "absolute_mean_difference": 0.0005874845048323973,
+        "absolute_median_difference": 0.0008705606609582875,
+        "iqr_difference": 0.0008373415470123297,
+        "synthetic_mean": 0.04599700831435621,
+        "synthetic_std": 0.017206669319638518,
+        "test_mean": 0.04540952380952381,
+        "test_std": 0.021792020424802546
+      },
+      "citric acid": {
+        "absolute_mean_difference": 0.00572150184163428,
+        "absolute_median_difference": 0.016101914048194887,
+        "iqr_difference": 0.027562246769666676,
+        "synthetic_mean": 0.3328371481001377,
+        "synthetic_std": 0.13076350601262368,
+        "test_mean": 0.3271156462585034,
+        "test_std": 0.11298236073311288
+      },
+      "density": {
+        "absolute_mean_difference": 0.00039017233549487607,
+        "absolute_median_difference": 0.0004325104713439609,
+        "iqr_difference": 0.0001272760772704773,
+        "synthetic_mean": 0.9942417777776719,
+        "synthetic_std": 0.0029451923809432207,
+        "test_mean": 0.993851605442177,
+        "test_std": 0.0029466864373343797
+      },
+      "fixed acidity": {
+        "absolute_mean_difference": 0.12908773841825472,
+        "absolute_median_difference": 0.2062469005584715,
+        "iqr_difference": 0.07127239704132116,
+        "synthetic_mean": 6.904121752023697,
+        "synthetic_std": 0.865726538354469,
+        "test_mean": 6.775034013605442,
+        "test_std": 0.8074604298551417
+      },
+      "free sulfur dioxide": {
+        "absolute_mean_difference": 2.8141825908479277,
+        "absolute_median_difference": 3.794435501098633,
+        "iqr_difference": 0.30485057830810547,
+        "synthetic_mean": 36.57608735275269,
+        "synthetic_std": 16.306505043299982,
+        "test_mean": 33.76190476190476,
+        "test_std": 16.253302472723544
+      },
+      "pH": {
+        "absolute_mean_difference": 0.004079142821889814,
+        "absolute_median_difference": 0.004538125991821129,
+        "iqr_difference": 0.009833109378814875,
+        "synthetic_mean": 3.1912814013957975,
+        "synthetic_std": 0.14724563181595993,
+        "test_mean": 3.1953605442176873,
+        "test_std": 0.15403718720452117
+      },
+      "residual sugar": {
+        "absolute_mean_difference": 0.07961041071463537,
+        "absolute_median_difference": 0.6077247142791746,
+        "iqr_difference": 1.1035156488418574,
+        "synthetic_mean": 6.322059390306473,
+        "synthetic_std": 5.032470042570976,
+        "test_mean": 6.242448979591837,
+        "test_std": 5.063269169496232
+      },
+      "sulphates": {
+        "absolute_mean_difference": 0.0066139560562818445,
+        "absolute_median_difference": 0.021784939765930156,
+        "iqr_difference": 0.0010054117441177235,
+        "synthetic_mean": 0.4911717791855335,
+        "synthetic_std": 0.10937420129948179,
+        "test_mean": 0.48455782312925166,
+        "test_std": 0.11038480185068494
+      },
+      "total sulfur dioxide": {
+        "absolute_mean_difference": 7.810710180581026,
+        "absolute_median_difference": 10.100837707519531,
+        "iqr_difference": 7.2111358642578125,
+        "synthetic_mean": 142.07941766357422,
+        "synthetic_std": 44.327232444912944,
+        "test_mean": 134.2687074829932,
+        "test_std": 40.114287075568235
+      },
+      "volatile acidity": {
+        "absolute_mean_difference": 0.003680865049260851,
+        "absolute_median_difference": 0.00873527467250823,
+        "iqr_difference": 0.010859702825546269,
+        "synthetic_mean": 0.2785039943009615,
+        "synthetic_std": 0.11341570095444016,
+        "test_mean": 0.27482312925170066,
+        "test_std": 0.09522423951688104
+      }
+    },
+    "marginal_fidelity_score": 0.486686540464344,
+    "method": "tabular_flow",
+    "nearest_neighbor_mean": 1.503583830513473,
+    "nearest_neighbor_min": 0.5783849266343054,
+    "notes": [
+      "Nearest-neighbor distances are memorization proxies, not formal privacy guarantees.",
+      "Bootstrap baseline is evaluated with the same metrics for fairness.",
+      "Selection score is 0.45 train-scale-normalized marginal fidelity, 0.35 dependence preservation when valid, and 0.20 legacy marginal fidelity."
+    ],
+    "objective_metrics": {
+      "data_generation_fidelity": 0.486686540464344,
+      "dependence_preservation": 0.9337154833320289,
+      "selection_score": 0.8323486403322584,
+      "train_scale_normalized_marginal_fidelity": 0.9071353623848434
+    },
+    "selection_score": 0.8323486403322584,
+    "train_scale_normalized_marginal_fidelity": 0.9071353623848434,
+    "unique_fraction": 1.0
+  },
+  "selected": {
+    "correlation_l1": 0.032526009379635484,
+    "dependence_preservation_score": 0.968498605280483,
+    "duplicate_fraction": 0.178,
+    "feature_differences": {
+      "alcohol": {
+        "absolute_mean_difference": 0.06542448979591775,
+        "absolute_median_difference": 0.0,
+        "iqr_difference": 0.0,
+        "synthetic_mean": 10.4858,
+        "synthetic_std": 1.217519803169998,
+        "test_mean": 10.551224489795917,
+        "test_std": 1.2455696169595525
+      },
+      "chlorides": {
+        "absolute_mean_difference": 0.0004444761904761965,
+        "absolute_median_difference": 0.000999999999999994,
+        "iqr_difference": 0.0010000000000000009,
+        "synthetic_mean": 0.045854000000000006,
+        "synthetic_std": 0.022199609996574266,
+        "test_mean": 0.04540952380952381,
+        "test_std": 0.021792020424802546
+      },
+      "citric acid": {
+        "absolute_mean_difference": 0.009914353741496573,
+        "absolute_median_difference": 0.010000000000000009,
+        "iqr_difference": 0.0,
+        "synthetic_mean": 0.33703,
+        "synthetic_std": 0.12878928177453278,
+        "test_mean": 0.3271156462585034,
+        "test_std": 0.11298236073311288
+      },
+      "density": {
+        "absolute_mean_difference": 0.00023349455782306627,
+        "absolute_median_difference": 0.00023999999999990695,
+        "iqr_difference": 0.00012000000000000899,
+        "synthetic_mean": 0.9940851,
+        "synthetic_std": 0.002890006019024873,
+        "test_mean": 0.993851605442177,
+        "test_std": 0.0029466864373343797
+      },
+      "fixed acidity": {
+        "absolute_mean_difference": 0.08336598639455772,
+        "absolute_median_difference": 0.09999999999999964,
+        "iqr_difference": 0.09999999999999964,
+        "synthetic_mean": 6.8584,
+        "synthetic_std": 0.8467286696457136,
+        "test_mean": 6.775034013605442,
+        "test_std": 0.8074604298551417
+      },
+      "free sulfur dioxide": {
+        "absolute_mean_difference": 1.2125952380952398,
+        "absolute_median_difference": 1.0,
+        "iqr_difference": 0.0,
+        "synthetic_mean": 34.9745,
+        "synthetic_std": 16.208149177188616,
+        "test_mean": 33.76190476190476,
+        "test_std": 16.253302472723544
+      },
+      "pH": {
+        "absolute_mean_difference": 0.010190544217687059,
+        "absolute_median_difference": 0.0,
+        "iqr_difference": 4.440892098500626e-16,
+        "synthetic_mean": 3.1851700000000003,
+        "synthetic_std": 0.1468889754202132,
+        "test_mean": 3.1953605442176873,
+        "test_std": 0.15403718720452117
+      },
+      "residual sugar": {
+        "absolute_mean_difference": 0.40390102040816256,
+        "absolute_median_difference": 1.0,
+        "iqr_difference": 0.4999999999999991,
+        "synthetic_mean": 6.64635,
+        "synthetic_std": 5.024531737137303,
+        "test_mean": 6.242448979591837,
+        "test_std": 5.063269169496232
+      },
+      "sulphates": {
+        "absolute_mean_difference": 0.006312176870748365,
+        "absolute_median_difference": 0.019999999999999962,
+        "iqr_difference": 5.551115123125783e-17,
+        "synthetic_mean": 0.49087000000000003,
+        "synthetic_std": 0.11657848472166724,
+        "test_mean": 0.48455782312925166,
+        "test_std": 0.11038480185068494
+      },
+      "total sulfur dioxide": {
+        "absolute_mean_difference": 3.5697925170068174,
+        "absolute_median_difference": 3.0,
+        "iqr_difference": 6.5,
+        "synthetic_mean": 137.8385,
+        "synthetic_std": 42.54023586852804,
+        "test_mean": 134.2687074829932,
+        "test_std": 40.114287075568235
+      },
+      "volatile acidity": {
+        "absolute_mean_difference": 0.0077718707482993254,
+        "absolute_median_difference": 0.0,
+        "iqr_difference": 2.7755575615628914e-17,
+        "synthetic_mean": 0.282595,
+        "synthetic_std": 0.10781275886925443,
+        "test_mean": 0.27482312925170066,
+        "test_std": 0.09522423951688104
+      }
+    },
+    "marginal_fidelity_score": 0.652144190630799,
+    "method": "training_row_bootstrap",
+    "nearest_neighbor_mean": 0.0,
+    "nearest_neighbor_min": 0.0,
+    "notes": [
+      "Nearest-neighbor distances are memorization proxies, not formal privacy guarantees.",
+      "Bootstrap baseline is evaluated with the same metrics for fairness.",
+      "Selection score is 0.45 train-scale-normalized marginal fidelity, 0.35 dependence preservation when valid, and 0.20 legacy marginal fidelity."
+    ],
+    "objective_metrics": {
+      "data_generation_fidelity": 0.652144190630799,
+      "dependence_preservation": 0.968498605280483,
+      "selection_score": 0.8941412553003947,
+      "train_scale_normalized_marginal_fidelity": 0.943862011835702
+    },
+    "selection_score": 0.8941412553003947,
+    "train_scale_normalized_marginal_fidelity": 0.943862011835702,
+    "unique_fraction": 0.8220000000000001
+  }
+}

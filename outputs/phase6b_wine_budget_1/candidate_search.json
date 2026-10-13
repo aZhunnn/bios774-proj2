@@ -1,0 +1,144 @@
+{
+  "budget": {
+    "allocation": {
+      "copula": 0,
+      "flow": 1,
+      "gmm": 0,
+      "vae": 0
+    },
+    "max_trained_candidates": 1,
+    "semantics": "max_models is the total number of trained generative candidates across all model families. Bootstrap baseline does not consume a training slot.",
+    "trained_candidates": 1
+  },
+  "copula": {
+    "reason": "No remaining trained-candidate budget.",
+    "skipped": true
+  },
+  "flow": {
+    "candidates": [
+      {
+        "checkpoint_path": "outputs/phase6b_wine_budget_1/tabular_flow_candidate_0.pt",
+        "config": {
+          "batch_size": 32,
+          "device": "cpu",
+          "early_stopping_patience": 5,
+          "epochs": 5,
+          "hidden_dim": 32,
+          "input_dim": 11,
+          "learning_rate": 0.001,
+          "num_layers": 4,
+          "seed": 2127
+        },
+        "epochs_ran": 5,
+        "failed": false,
+        "failure_reason": null,
+        "history": {
+          "train_nll": [
+            15.124412713227448,
+            13.796849065356785,
+            12.754572100109524,
+            12.102241613246777,
+            11.79441112059134
+          ],
+          "validation_nll": [
+            14.3749418258667,
+            13.26424789428711,
+            12.397820472717285,
+            12.058106422424316,
+            11.842278480529785
+          ]
+        },
+        "validation_nll": 11.842278480529785,
+        "wall_seconds": 0.4338276661001146
+      }
+    ],
+    "selected_index": 0,
+    "selection_reason": "Selected lowest validation negative log likelihood within flow family; test data was not used."
+  },
+  "gmm": {
+    "reason": "No remaining trained-candidate budget.",
+    "skipped": true
+  },
+  "planning": {
+    "allocated_models": [
+      "flow"
+    ],
+    "allocation": {
+      "copula": 0,
+      "flow": 1,
+      "gmm": 0,
+      "vae": 0
+    },
+    "candidates": [
+      {
+        "eligible": true,
+        "feasible": true,
+        "model": "flow",
+        "priority_score": 0.7615096120531748,
+        "reasons": [
+          "n=3429, p=11, continuous_only=True.",
+          "Model is feasible under deterministic Phase 6B rules.",
+          "Objective is unconditional synthetic data generation."
+        ],
+        "skip_reason": null
+      },
+      {
+        "eligible": true,
+        "feasible": true,
+        "model": "gmm",
+        "priority_score": 0.7206612905169067,
+        "reasons": [
+          "n=3429, p=11, continuous_only=True.",
+          "Model is feasible under deterministic Phase 6B rules.",
+          "Objective is unconditional synthetic data generation."
+        ],
+        "skip_reason": null
+      },
+      {
+        "eligible": true,
+        "feasible": true,
+        "model": "copula",
+        "priority_score": 0.7094654606007138,
+        "reasons": [
+          "n=3429, p=11, continuous_only=True.",
+          "Model is feasible under deterministic Phase 6B rules.",
+          "Objective is unconditional synthetic data generation."
+        ],
+        "skip_reason": null
+      },
+      {
+        "eligible": true,
+        "feasible": true,
+        "model": "vae",
+        "priority_score": 0.6800000000000002,
+        "reasons": [
+          "n=3429, p=11, continuous_only=True.",
+          "Model is feasible under deterministic Phase 6B rules.",
+          "Objective is unconditional synthetic data generation."
+        ],
+        "skip_reason": null
+      }
+    ],
+    "planning_rule": "Rank feasible and eligible tabular candidates using deterministic dataset-profile scores from modality, feature types, sample size, dimensionality, skewness, correlation, objective, budget, eligibility, and optional prior validation evidence; allocate max_models total trained candidates by priority.",
+    "profile_stats": {
+      "binary_features": 0,
+      "continuous_features": 11,
+      "continuous_only": true,
+      "max_abs_correlation": 0.839905259699901,
+      "mean_abs_correlation": 0.1776881752817795,
+      "mean_abs_skewness": 1.2970918522974244,
+      "n_features": 11,
+      "n_samples": 3429,
+      "sample_feature_ratio": 311.72727272727275
+    },
+    "skipped_models": {
+      "copula": "Training budget exhausted after 1 allocated candidates.",
+      "gmm": "Training budget exhausted after 1 allocated candidates.",
+      "vae": "Training budget exhausted after 1 allocated candidates."
+    }
+  },
+  "vae": {
+    "reason": "No remaining trained-candidate budget.",
+    "skipped": true
+  }
+}

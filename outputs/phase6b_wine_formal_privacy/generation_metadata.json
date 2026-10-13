@@ -1,0 +1,6 @@
+{
+  "method": "rejected_no_eligible_method",
+  "n_samples": 1000,
+  "output_path": "outputs/phase6b_wine_formal_privacy/synthetic_samples.csv",
+  "seed": 2026
+}

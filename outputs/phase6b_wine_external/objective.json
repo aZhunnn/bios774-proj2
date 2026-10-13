@@ -1,0 +1,13 @@
+{
+  "confidence": 0.8500000000000001,
+  "constraints": {
+    "use_case": "external_sharing"
+  },
+  "objective_type": "data_generation",
+  "raw_text": "Generate synthetic continuous tabular data for external sharing without a formal privacy guarantee.",
+  "requested_outputs": [
+    "synthetic_or_completed_data",
+    "evaluation_results",
+    "analysis_report"
+  ]
+}

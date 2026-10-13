@@ -1,0 +1,79 @@
+{
+  "budget": {
+    "max_trained_candidates": 2,
+    "trained_candidates": 0
+  },
+  "planning": {
+    "allocated_models": [],
+    "allocation": {
+      "copula": 0,
+      "flow": 0,
+      "gmm": 0,
+      "vae": 0
+    },
+    "candidates": [
+      {
+        "eligible": false,
+        "feasible": true,
+        "model": "copula",
+        "priority_score": -Infinity,
+        "reasons": [
+          "n=3429, p=11, continuous_only=True.",
+          "Model is feasible under deterministic Phase 6B rules."
+        ],
+        "skip_reason": "No currently implemented method has a formal privacy-preserving mechanism or guarantee."
+      },
+      {
+        "eligible": false,
+        "feasible": true,
+        "model": "flow",
+        "priority_score": -Infinity,
+        "reasons": [
+          "n=3429, p=11, continuous_only=True.",
+          "Model is feasible under deterministic Phase 6B rules."
+        ],
+        "skip_reason": "No currently implemented method has a formal privacy-preserving mechanism or guarantee."
+      },
+      {
+        "eligible": false,
+        "feasible": true,
+        "model": "gmm",
+        "priority_score": -Infinity,
+        "reasons": [
+          "n=3429, p=11, continuous_only=True.",
+          "Model is feasible under deterministic Phase 6B rules."
+        ],
+        "skip_reason": "No currently implemented method has a formal privacy-preserving mechanism or guarantee."
+      },
+      {
+        "eligible": false,
+        "feasible": true,
+        "model": "vae",
+        "priority_score": -Infinity,
+        "reasons": [
+          "n=3429, p=11, continuous_only=True.",
+          "Model is feasible under deterministic Phase 6B rules."
+        ],
+        "skip_reason": "No currently implemented method has a formal privacy-preserving mechanism or guarantee."
+      }
+    ],
+    "planning_rule": "Rank feasible and eligible tabular candidates using deterministic dataset-profile scores from modality, feature types, sample size, dimensionality, skewness, correlation, objective, budget, eligibility, and optional prior validation evidence; allocate max_models total trained candidates by priority.",
+    "profile_stats": {
+      "binary_features": 0,
+      "continuous_features": 11,
+      "continuous_only": true,
+      "max_abs_correlation": 0.839905259699901,
+      "mean_abs_correlation": 0.1776881752817795,
+      "mean_abs_skewness": 1.2970918522974244,
+      "n_features": 11,
+      "n_samples": 3429,
+      "sample_feature_ratio": 311.72727272727275
+    },
+    "skipped_models": {
+      "copula": "No currently implemented method has a formal privacy-preserving mechanism or guarantee.",
+      "flow": "No currently implemented method has a formal privacy-preserving mechanism or guarantee.",
+      "gmm": "No currently implemented method has a formal privacy-preserving mechanism or guarantee.",
+      "vae": "No currently implemented method has a formal privacy-preserving mechanism or guarantee."
+    }
+  }
+}

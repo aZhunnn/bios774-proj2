@@ -1,0 +1,110 @@
+{
+  "class_balance": {
+    "3": 20,
+    "4": 163,
+    "5": 1457,
+    "6": 2198,
+    "7": 880,
+    "8": 175,
+    "9": 5
+  },
+  "dataset_name": "winequality-white",
+  "feature_schema": [
+    {
+      "feature_type": "numeric",
+      "missing_count": 0,
+      "name": "fixed acidity",
+      "unique_count": 68
+    },
+    {
+      "feature_type": "numeric",
+      "missing_count": 0,
+      "name": "volatile acidity",
+      "unique_count": 125
+    },
+    {
+      "feature_type": "numeric",
+      "missing_count": 0,
+      "name": "citric acid",
+      "unique_count": 87
+    },
+    {
+      "feature_type": "numeric",
+      "missing_count": 0,
+      "name": "residual sugar",
+      "unique_count": 310
+    },
+    {
+      "feature_type": "numeric",
+      "missing_count": 0,
+      "name": "chlorides",
+      "unique_count": 160
+    },
+    {
+      "feature_type": "numeric",
+      "missing_count": 0,
+      "name": "free sulfur dioxide",
+      "unique_count": 132
+    },
+    {
+      "feature_type": "numeric",
+      "missing_count": 0,
+      "name": "total sulfur dioxide",
+      "unique_count": 251
+    },
+    {
+      "feature_type": "numeric",
+      "missing_count": 0,
+      "name": "density",
+      "unique_count": 890
+    },
+    {
+      "feature_type": "numeric",
+      "missing_count": 0,
+      "name": "pH",
+      "unique_count": 103
+    },
+    {
+      "feature_type": "numeric",
+      "missing_count": 0,
+      "name": "sulphates",
+      "unique_count": 79
+    },
+    {
+      "feature_type": "numeric",
+      "missing_count": 0,
+      "name": "alcohol",
+      "unique_count": 103
+    },
+    {
+      "feature_type": "numeric",
+      "missing_count": 0,
+      "name": "quality",
+      "unique_count": 7
+    }
+  ],
+  "kind": "tabular",
+  "missing_values": {
+    "alcohol": 0,
+    "chlorides": 0,
+    "citric acid": 0,
+    "density": 0,
+    "fixed acidity": 0,
+    "free sulfur dioxide": 0,
+    "pH": 0,
+    "quality": 0,
+    "residual sugar": 0,
+    "sulphates": 0,
+    "total sulfur dioxide": 0,
+    "volatile acidity": 0
+  },
+  "n_features": 12,
+  "n_samples": 4898,
+  "notes": [
+    "Class imbalance detected."
+  ],
+  "role_exclusions": [
+    "quality"
+  ],
+  "target_column": "quality"
+}

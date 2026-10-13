@@ -1,0 +1,113 @@
+{
+  "decision_rule": "Select the method with the highest validation selection_score from synthetic-vs-validation evaluation. VAE ELBO and flow NLL are used only within their own family searches.",
+  "eligibility": {
+    "eligible_methods": [
+      "baseline",
+      "flow"
+    ],
+    "method_eligibility": [
+      {
+        "eligible": true,
+        "limitations": [
+          "Eligibility does not imply high fidelity or privacy protection."
+        ],
+        "method": "baseline",
+        "reasons": [
+          "Method is eligible for internal testing or stress-testing under current deterministic rules."
+        ]
+      },
+      {
+        "eligible": true,
+        "limitations": [
+          "Eligibility does not imply high fidelity or privacy protection."
+        ],
+        "method": "flow",
+        "reasons": [
+          "Method is eligible for internal testing or stress-testing under current deterministic rules."
+        ]
+      }
+    ],
+    "ranking_metric": "selection_score",
+    "rejected_methods": [],
+    "selected_method": "baseline",
+    "selection_reason": "Selected highest selection_score among eligible methods; hard eligibility rules were applied before ranking.",
+    "use_case": "internal_testing"
+  },
+  "metric_definition": "selection_score = 0.45 train-scale-normalized marginal fidelity + 0.35 dependence preservation + 0.20 legacy marginal fidelity when correlations are valid; without correlations, 0.75 normalized marginal + 0.25 legacy marginal.",
+  "metric_direction": "higher selection_score is better",
+  "objective_recommendation": {
+    "adequacy_claim": false,
+    "adequacy_warning_threshold": 0.85,
+    "eligibility_summary": {
+      "eligible_methods": [
+        "baseline",
+        "flow"
+      ],
+      "method_eligibility": [
+        {
+          "eligible": true,
+          "limitations": [
+            "Eligibility does not imply high fidelity or privacy protection."
+          ],
+          "method": "baseline",
+          "reasons": [
+            "Method is eligible for internal testing or stress-testing under current deterministic rules."
+          ]
+        },
+        {
+          "eligible": true,
+          "limitations": [
+            "Eligibility does not imply high fidelity or privacy protection."
+          ],
+          "method": "flow",
+          "reasons": [
+            "Method is eligible for internal testing or stress-testing under current deterministic rules."
+          ]
+        }
+      ],
+      "ranking_metric": "selection_score",
+      "rejected_methods": [],
+      "selected_method": "baseline",
+      "selection_reason": "Selected highest selection_score among eligible methods; hard eligibility rules were applied before ranking.",
+      "use_case": "internal_testing"
+    },
+    "language_guardrail": "Eligibility and high relative fidelity do not establish privacy, safety, clinical utility, or external-release suitability.",
+    "reasons": [
+      "Selected method ranked highest among eligible validation candidates."
+    ],
+    "recommendation": "consider_selected_with_limitations",
+    "relative_ranking": [
+      "baseline",
+      "flow"
+    ],
+    "selected_family": "baseline",
+    "selected_validation_score": 0.9125376457832101,
+    "use_case": "internal_testing"
+  },
+  "sample_count": 734,
+  "scores": {
+    "baseline": {
+      "data_generation_fidelity": 0.7120288033647164,
+      "dependence_preservation": 0.966044913283156,
+      "duplicate_fraction": 0.1539509536784741,
+      "nearest_neighbor_mean": 0.0,
+      "selection_score": 0.9125376457832101,
+      "train_scale_normalized_marginal_fidelity": 0.9600359232470271
+    },
+    "flow": {
+      "data_generation_fidelity": 0.6843117865424767,
+      "dependence_preservation": 0.9335511167232102,
+      "duplicate_fraction": 0.0,
+      "nearest_neighbor_mean": 1.5071339571278755,
+      "selection_score": 0.8829950397244746,
+      "train_scale_normalized_marginal_fidelity": 0.9319773145841236
+    }
+  },
+  "seeds": {
+    "baseline": 2033,
+    "copula": 2045,
+    "flow": 2039,
+    "gmm": 2043,
+    "vae": 2037
+  }
+}

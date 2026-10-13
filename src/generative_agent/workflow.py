@@ -26,6 +26,7 @@ from generative_agent.search import propose_vae_configs, run_vae_search
 from generative_agent.splitting import DatasetSplitter, SplitConfig
 from generative_agent.state import ExperimentBudget
 from generative_agent.tabular_io import ColumnRoles, load_csv_dataset
+from generative_agent.tabular_planning import build_tabular_training_plan
 from generative_agent.tabular_preprocessing import TabularVaePreprocessor
 from generative_agent.vae import VaeConfig
 
@@ -107,17 +108,47 @@ def run_tabular_generation_workflow(
         evaluation_payload = {"selected": baseline_eval.to_dict(), "baseline": baseline_eval.to_dict()}
     else:
         continuous_only = len(metadata.schema.binary) == 0 and len(metadata.schema.continuous) == train_array.shape[1]
-        family_budget = _allocate_training_budget(total_candidates=selected_budget.max_models, continuous_only=continuous_only)
+        training_plan = build_tabular_training_plan(
+            train_frame=train_frame,
+            schema=metadata.schema,
+            objective_type=state.objective.objective_type,
+            use_case=state.objective.constraints["use_case"],
+            budget=selected_budget,
+        )
+        family_budget = training_plan.allocation
         if sum(family_budget.values()) <= 0:
             baseline.to_csv(synthetic_path, index=False)
+            no_candidate_reason = (
+                "No implemented model is eligible for the requested objective/use case."
+                if not any(candidate.eligible for candidate in training_plan.candidates)
+                else "No trained model was allocated under the requested budget."
+            )
+            rejected = not any(candidate.eligible for candidate in training_plan.candidates)
             generation_metadata = {
                 "n_samples": sample_count,
                 "seed": selected_budget.seed,
-                "method": "training_row_bootstrap_no_training_budget",
+                "method": "rejected_no_eligible_method" if rejected else "training_row_bootstrap_no_training_budget",
                 "output_path": str(synthetic_path),
             }
-            evaluation_payload = {"selected": baseline_eval.to_dict(), "baseline": baseline_eval.to_dict()}
-            search_payload = {"budget": {"max_trained_candidates": selected_budget.max_models, "trained_candidates": 0}}
+            evaluation_payload = (
+                {"selected": {"method": "rejected", "reason": no_candidate_reason}, "baseline": baseline_eval.to_dict()}
+                if rejected
+                else {"selected": baseline_eval.to_dict(), "baseline": baseline_eval.to_dict()}
+            )
+            search_payload = {
+                "planning": training_plan.to_dict(),
+                "budget": {"max_trained_candidates": selected_budget.max_models, "trained_candidates": 0},
+            }
+            selected_family = "rejected" if rejected else "baseline"
+            validation_comparison = {
+                "planning": training_plan.to_dict(),
+                "objective_recommendation": _objective_recommendation(
+                    selected_family=selected_family,
+                    validation_scores={},
+                    eligibility={"selected_method": None, "selection_reason": no_candidate_reason},
+                    use_case=state.objective.constraints["use_case"],
+                ),
+            }
         else:
             validation_real = frame.iloc[list(manifest.indices.validation)].reset_index(drop=True)
             validation_baseline = bootstrap_baseline(
@@ -291,6 +322,7 @@ def run_tabular_generation_workflow(
                 "trained_candidates": trained_candidates,
                 "allocation": family_budget,
             }
+            family_searches["planning"] = training_plan.to_dict()
             if trained_candidates > selected_budget.max_models:
                 raise RuntimeError("Internal budget accounting error: trained candidates exceeded max_models.")
 
@@ -325,6 +357,13 @@ def run_tabular_generation_workflow(
                 selected_family = "rejected"
             else:
                 selected_family = eligibility_selection.selected_method
+            objective_recommendation = _objective_recommendation(
+                selected_family=selected_family,
+                validation_scores=validation_scores,
+                eligibility=eligibility_selection.to_dict(),
+                use_case=state.objective.constraints["use_case"],
+            )
+            validation_comparison["objective_recommendation"] = objective_recommendation
             final_evaluations = {"baseline": baseline_eval.to_dict()}
             final_generations = {"baseline": baseline}
             if "vae" in validation_scores:
@@ -475,6 +514,7 @@ def run_tabular_generation_workflow(
         ),
         "validation_comparison": validation_comparison,
         "eligibility": validation_comparison.get("eligibility", {}),
+        "objective_recommendation": validation_comparison.get("objective_recommendation", {}),
         "model_limitations": {
             "vae": "Supports continuous and binary tabular features with Gaussian/Bernoulli observation assumptions.",
             "flow": "Phase 3A flow supports continuous-only tabular features with no missing values.",
@@ -579,6 +619,39 @@ def _validation_score(*, train_real, validation_real, synthetic, schema, method:
         "selection_score": result.objective_metrics["selection_score"],
         "duplicate_fraction": result.duplicate_fraction,
         "nearest_neighbor_mean": result.nearest_neighbor_mean,
+    }
+
+
+def _objective_recommendation(*, selected_family: str, validation_scores: dict[str, dict[str, float]], eligibility: dict[str, object], use_case: str) -> dict[str, object]:
+    sorted_scores = sorted(
+        validation_scores.items(),
+        key=lambda item: item[1]["selection_score"],
+        reverse=True,
+    )
+    selected_score = validation_scores.get(selected_family, {}).get("selection_score")
+    adequacy_threshold = 0.85
+    if use_case == "formal_privacy" or selected_family == "rejected":
+        recommendation = "reject"
+        reasons = ["No implemented method provides a formal privacy guarantee."]
+    elif selected_score is not None and selected_score >= adequacy_threshold:
+        recommendation = "consider_selected_with_limitations"
+        reasons = ["Selected method ranked highest among eligible validation candidates."]
+    else:
+        recommendation = "insufficient_evidence"
+        reasons = ["Best eligible validation score is below the heuristic adequacy-warning threshold."]
+    if use_case == "external_sharing":
+        reasons.append("External sharing excludes exact-record bootstrap and still requires disclosure that no formal privacy guarantee is implemented.")
+    return {
+        "use_case": use_case,
+        "selected_family": selected_family,
+        "relative_ranking": [name for name, _score in sorted_scores],
+        "selected_validation_score": selected_score,
+        "adequacy_warning_threshold": adequacy_threshold,
+        "adequacy_claim": False,
+        "recommendation": recommendation,
+        "reasons": reasons,
+        "eligibility_summary": eligibility,
+        "language_guardrail": "Eligibility and high relative fidelity do not establish privacy, safety, clinical utility, or external-release suitability.",
     }
 
 
