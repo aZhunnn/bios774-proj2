@@ -45,12 +45,12 @@
           0.055092185735702515
         ]
       },
-      "wall_seconds": 0.271227709017694
+      "wall_seconds": 0.37144816701766104
     },
     "validation_evaluation": {
       "duplicate_fraction": 0.0,
       "feature_mmd": 0.5660452842712402,
-      "generation_seconds": 0.000969375018030405,
+      "generation_seconds": 0.0011280410108156502,
       "gradient_mean_abs_error": 0.005578368902206421,
       "gradient_std_abs_error": 0.014126740396022797,
       "local_patch_std_abs_error": 0.012279495596885681,
@@ -86,7 +86,7 @@
       {
         "duplicate_fraction": 0.0,
         "feature_mmd": 0.5660452842712402,
-        "generation_seconds": 0.000969375018030405,
+        "generation_seconds": 0.0011280410108156502,
         "gradient_mean_abs_error": 0.005578368902206421,
         "gradient_std_abs_error": 0.014126740396022797,
         "local_patch_std_abs_error": 0.012279495596885681,
@@ -113,7 +113,7 @@
       {
         "duplicate_fraction": 0.0,
         "feature_mmd": 0.5788407325744629,
-        "generation_seconds": 0.0010541658848524094,
+        "generation_seconds": 0.0012369999894872308,
         "gradient_mean_abs_error": 0.002693258225917816,
         "gradient_std_abs_error": 0.01689976453781128,
         "local_patch_std_abs_error": 0.01460268348455429,
@@ -183,12 +183,12 @@
           2210.499755859375
         ]
       },
-      "wall_seconds": 0.13411800004541874
+      "wall_seconds": 0.28042808297323063
     },
     "validation_evaluation": {
       "duplicate_fraction": 0.0,
       "feature_mmd": 0.575106143951416,
-      "generation_seconds": 0.0008420832455158234,
+      "generation_seconds": 0.0028447500080801547,
       "gradient_mean_abs_error": 0.017375580966472626,
       "gradient_std_abs_error": 0.03229660727083683,
       "local_patch_std_abs_error": 0.03187942132353783,
@@ -224,7 +224,7 @@
       {
         "duplicate_fraction": 0.0,
         "feature_mmd": 0.575106143951416,
-        "generation_seconds": 0.0008420832455158234,
+        "generation_seconds": 0.0028447500080801547,
         "gradient_mean_abs_error": 0.017375580966472626,
         "gradient_std_abs_error": 0.03229660727083683,
         "local_patch_std_abs_error": 0.03187942132353783,
@@ -251,7 +251,7 @@
       {
         "duplicate_fraction": 0.0,
         "feature_mmd": 0.5804368257522583,
-        "generation_seconds": 0.0008157500997185707,
+        "generation_seconds": 0.0011054580099880695,
         "gradient_mean_abs_error": 0.019036438316106796,
         "gradient_std_abs_error": 0.033677201718091965,
         "local_patch_std_abs_error": 0.03327484428882599,

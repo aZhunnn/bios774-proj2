@@ -36,6 +36,7 @@ def run_image_generation_workflow(
     output_dir: str | Path,
     objective_text: str,
     budget: ExperimentBudget | None = None,
+    report_name: str = "final_report.md",
     preprocess: ImagePreprocessConfig | None = None,
     latent_dim: int = 16,
     gan_latent_dim: int = 32,
@@ -166,8 +167,21 @@ def run_image_generation_workflow(
         ],
     }
     store.save_json("agent_decisions", decisions, kind="decisions")
-    report = output / "final_report.md"
-    report.write_text(_render_report(bundle.profile.to_dict(), selected_record["config"], selected_record["training"], selected_record["validation_evaluation"], final_test_evaluation.to_dict(), decisions, candidate_records), encoding="utf-8")
+    report = output / report_name
+    report.write_text(
+        _render_report(
+            profile=bundle.profile.to_dict(),
+            objective_text=objective_text,
+            config=selected_record["config"],
+            training=selected_record["training"],
+            validation_evaluation=selected_record["validation_evaluation"],
+            test_evaluation=final_test_evaluation.to_dict(),
+            decisions=decisions,
+            candidates=candidate_records,
+            report_name=report_name,
+        ),
+        encoding="utf-8",
+    )
     return ImageWorkflowResult(output, report, Path(str(selected_record["checkpoint_path"])), final_grid_path, False)
 
 
@@ -341,31 +355,59 @@ def _evaluate_selected_on_test(*, name: str, model, train_dataset, test_dataset,
     raise ValueError(f"Unsupported selected image model: {name}.")
 
 
-def _render_report(profile, config, training, validation_evaluation, test_evaluation, decisions, candidates) -> str:
-    return "\n".join(
-        [
-            "# Project 2 Image Generative Agent Report",
-            "",
-            "## Dataset Profile",
-            f"```json\n{json.dumps(profile, indent=2)}\n```",
-            "",
-            "## Selected Model Configuration",
-            f"```json\n{json.dumps(config, indent=2)}\n```",
-            "",
-            "## Selected Model Training",
-            f"```json\n{json.dumps(training, indent=2, default=str)}\n```",
-            "",
-            "## Validation Evaluation",
-            f"```json\n{json.dumps(validation_evaluation, indent=2)}\n```",
-            "",
-            "## Held-Out Test Evaluation",
-            f"```json\n{json.dumps(test_evaluation, indent=2)}\n```",
-            "",
-            "## Candidate Results",
-            f"```json\n{json.dumps(candidates, indent=2, default=str)}\n```",
-            "",
-            "## Agent Decisions",
-            f"```json\n{json.dumps(decisions, indent=2)}\n```",
-            "",
-        ]
-    )
+def _render_report(*, profile, objective_text, config, training, validation_evaluation, test_evaluation, decisions, candidates, report_name) -> str:
+    planning = decisions.get("planning", {})
+    eligibility = decisions.get("eligibility", {})
+    absolute = decisions.get("absolute_evidence", {})
+    candidate_lines = ["| Candidate | Priority | Status | Validation score |", "|---|---:|---|---:|"]
+    priorities = {item["model"]: item for item in planning.get("candidate_priorities", [])}
+    for name, record in candidates.items():
+        priority = priorities.get(name, {}).get("priority_score", "-")
+        score = record.get("validation_reliability", {}).get("selection_score_mean", "-") if isinstance(record, dict) else "-"
+        candidate_lines.append(f"| {name} | {priority} | {record.get('status', 'unknown')} | {score:.4f} |" if isinstance(score, (int, float)) else f"| {name} | {priority} | {record.get('status', 'unknown')} | {score} |")
+    lines = [
+        "# Generated Report 2: PathMNIST",
+        "",
+        "## 1. Dataset and objective",
+        f"The agent inspected **{profile.get('name', 'the supplied image dataset')}** with {profile.get('n_samples')} images of shape `{profile.get('image_shape')}` and {profile.get('channels')} channels.",
+        f"The user objective was: *{objective_text}*",
+        "",
+        "Labels were retained as metadata and were not used as conditioning variables. Images were normalized to unit range. The demonstration used the recorded train/validation/test split of 256/64/64 images.",
+        "",
+        "## 2. Agent decision trace",
+        "1. **Inspect:** recorded image shape, channels, value range, labels, and split sizes.",
+        "2. **Interpret:** classified the request as unconditional image generation for internal testing.",
+        f"3. **Eligibility:** eligible candidates were `{', '.join(eligibility.get('eligible_methods', []))}`; no formal privacy guarantee was inferred.",
+        f"4. **Plan:** allocated `{planning.get('budget', {}).get('max_trained_candidates', 'not recorded')}` total trained candidates: `{', '.join(planning.get('allocated_models', []))}`.",
+        "5. **Execute/Evaluate:** trained candidates on the training subset, compared repeated validation generations, then evaluated the selected candidate on held-out test data.",
+        "6. **Reflect/Recommend:** selected the relative validation winner while retaining an absolute-quality warning.",
+        "",
+        "## 3. Candidate planning and training",
+        *candidate_lines,
+        "",
+        f"Selected candidate: **{decisions.get('selected_candidate', 'not recorded')}**. Training ran for `{training.get('epochs_ran', 'not recorded')}` epochs on `{training.get('device', 'not recorded')}`; recorded training runtime was `{training.get('wall_seconds', 'not recorded')}` seconds.",
+        "",
+        "## 4. Validation and held-out evaluation",
+        f"Validation selection score: `{validation_evaluation.get('selection_score', 'not recorded')}` for the selected candidate. The selection score is a heuristic combination of pixel summaries, gradient/local variation, diversity, handcrafted feature discrepancy, and duplicate diagnostics; higher is better for relative ranking only.",
+        "",
+        f"Held-out test selection score: `{test_evaluation.get('selection_score', 'not recorded')}`.",
+        f"Held-out duplicate fraction: `{test_evaluation.get('duplicate_fraction', 'not recorded')}`.",
+        f"Held-out nearest-neighbor mean: `{test_evaluation.get('nearest_neighbor_mean', 'not recorded')}`; nearest-neighbor diagnostics are memorization proxies, not privacy guarantees.",
+        f"Generated grids and checkpoints were saved in the workflow output directory. The handcrafted feature discrepancy is not KID/FID and is not a clinically validated pathology metric.",
+        "",
+        "## 5. Recommendation and downstream use",
+        f"The agent ranked **{decisions.get('selected_candidate', 'the selected candidate')}** first among eligible candidates. The score margin and selection interpretation were: `{absolute.get('top_two_score_margin', 'not recorded')}` and `{str(absolute.get('interpretation', 'not recorded')).rstrip('.')}`.",
+        "",
+        "Recommended use: internal pipeline testing and stress-testing only. The result does not establish clinical realism, clinical utility, privacy, or suitability for external release.",
+        "",
+        "## 6. Limitations and artifacts",
+        "- The experiment is a small CPU-feasible demonstration; two training epochs are not evidence of mature generative quality.",
+        "- Image metrics are finite-sample heuristics and are not calibrated acceptance thresholds.",
+        "- The VAE and GAN are unconditional; labels are not used for conditional generation.",
+        "- Reflection explains completed decisions but does not trigger replanning or retraining.",
+        "- Generated outputs include `image_gan_test_grid.png`, validation grids, `image_vae_checkpoint.pt`, and `image_gan_checkpoint.pt`.",
+        "- Detailed artifacts are stored beside this report: `dataset_profile.json`, `objective.json`, `planning.json`, `preprocessing.json`, `candidate_results.json`, `training_history.json`, `evaluation_results.json`, `final_test_evaluation.json`, `agent_decisions.json`, checkpoints, and generated image grids.",
+        f"- This report was generated as `{report_name}` from stored workflow results.",
+        "",
+    ]
+    return "\n".join(lines)

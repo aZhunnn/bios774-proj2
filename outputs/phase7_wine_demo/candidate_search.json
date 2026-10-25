@@ -32,7 +32,7 @@
         "failed": false,
         "failure_reason": null,
         "validation_dependence_score": -0.03825878186115019,
-        "wall_seconds": 0.0039048749022185802
+        "wall_seconds": 0.004162666969932616
       }
     ],
     "selected": {
@@ -55,7 +55,7 @@
       "failed": false,
       "failure_reason": null,
       "validation_dependence_score": -0.03825878186115019,
-      "wall_seconds": 0.0039048749022185802
+      "wall_seconds": 0.004162666969932616
     },
     "selected_index": 0,
     "selection_reason": "Selected highest validation dependence proxy within copula family; test data was not used."
@@ -95,7 +95,7 @@
           ]
         },
         "validation_nll": 11.842278480529785,
-        "wall_seconds": 0.4339164588600397
+        "wall_seconds": 0.6309937089681625
       }
     ],
     "selected_index": 0,
@@ -140,7 +140,7 @@
         "failed": false,
         "failure_reason": null,
         "validation_log_likelihood": -13.116392135620117,
-        "wall_seconds": 0.02515566674992442
+        "wall_seconds": 0.030608583008870482
       }
     ],
     "selected": {
@@ -180,7 +180,7 @@
       "failed": false,
       "failure_reason": null,
       "validation_log_likelihood": -13.116392135620117,
-      "wall_seconds": 0.02515566674992442
+      "wall_seconds": 0.030608583008870482
     },
     "selected_index": 0,
     "selection_reason": "Selected highest validation average log likelihood within GMM family; test data was not used."
@@ -308,7 +308,7 @@
           ]
         },
         "validation_loss": 15.23876953125,
-        "wall_seconds": 0.2461048332042992
+        "wall_seconds": 0.501236375013832
       }
     ],
     "selected_index": 0,

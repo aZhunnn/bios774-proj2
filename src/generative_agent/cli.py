@@ -18,6 +18,7 @@ def main() -> None:
     parser.add_argument("--modality", choices=("auto", "tabular", "image"), default="auto")
     parser.add_argument("--objective", default="Generate synthetic data.")
     parser.add_argument("--output-dir", default="outputs/project2_agent_run")
+    parser.add_argument("--report-name", default="final_report.md")
     parser.add_argument("--target")
     parser.add_argument("--identifier", action="append", default=[])
     parser.add_argument("--conditioning", action="append", default=[])
@@ -40,6 +41,7 @@ def main() -> None:
             npz_path=dataset_path,
             objective_text=args.objective,
             output_dir=Path(args.output_dir),
+            report_name=args.report_name,
             budget=budget,
             preprocess=ImagePreprocessConfig(
                 max_train_samples=args.max_train_samples,
@@ -57,6 +59,7 @@ def main() -> None:
             csv_path=dataset_path,
             objective_text=args.objective,
             output_dir=Path(args.output_dir),
+            report_name=args.report_name,
             roles=ColumnRoles(
                 identifiers=tuple(args.identifier),
                 target=args.target,

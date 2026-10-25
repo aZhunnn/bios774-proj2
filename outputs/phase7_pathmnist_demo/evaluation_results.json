@@ -1,7 +1,7 @@
 {
   "duplicate_fraction": 0.0,
   "feature_mmd": 0.5660452842712402,
-  "generation_seconds": 0.000969375018030405,
+  "generation_seconds": 0.0011280410108156502,
   "gradient_mean_abs_error": 0.005578368902206421,
   "gradient_std_abs_error": 0.014126740396022797,
   "local_patch_std_abs_error": 0.012279495596885681,

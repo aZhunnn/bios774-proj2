@@ -125,5 +125,5 @@
   "selected_candidate": "image_gan",
   "selection_metric": "1 / (1 + pixel mean error + pixel std error + 0.5 gradient mean error + 0.5 gradient std error + local patch std error + diversity error + 0.25 handcrafted feature MMD + duplicate fraction)",
   "selection_rule": "Train up to max_models total feasible eligible image candidates; select highest shared validation selection_score; evaluate held-out test only after selection.",
-  "workflow_wall_seconds": 2.3653474170714617
+  "workflow_wall_seconds": 3.6647256249561906
 }

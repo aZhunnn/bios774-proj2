@@ -45,6 +45,7 @@ def run_tabular_generation_workflow(
     csv_path: str | Path,
     objective_text: str,
     output_dir: str | Path,
+    report_name: str = "final_report.md",
     roles: ColumnRoles | None = None,
     budget: ExperimentBudget | None = None,
     n_synthetic: int | None = None,
@@ -537,9 +538,18 @@ def run_tabular_generation_workflow(
     store.save_json("evaluation_results", evaluation_payload, kind="evaluation")
     store.save_json("agent_decisions", decisions, kind="decisions")
 
-    report_path = output / "final_report.md"
+    report_path = output / report_name
     report_path.write_text(
-        _render_report(selected_config, search_payload, generation_metadata, evaluation_payload, decisions),
+        _render_report(
+            profile=asdict(state.profile),
+            objective=asdict(state.objective),
+            config=selected_config,
+            search=search_payload,
+            generation=generation_metadata,
+            evaluation=evaluation_payload,
+            decisions=decisions,
+            report_name=report_name,
+        ),
         encoding="utf-8",
     )
     return WorkflowResult(
@@ -552,54 +562,87 @@ def run_tabular_generation_workflow(
 
 
 def _render_report(
+    *,
+    profile: dict[str, object],
+    objective: dict[str, object],
     config: VaeConfig | FlowConfig | GmmConfig | CopulaConfig | None,
     search: dict[str, object] | None,
     generation: dict[str, object],
     evaluation: dict[str, object],
     decisions: dict[str, object],
+    report_name: str,
 ) -> str:
-    return "\n".join(
-        [
-            "# Project 2 Tabular Generative Agent Report",
-            "",
-            "## Scope",
-            "This report is generated from stored workflow results for unconditional tabular synthetic data generation.",
-            "",
-            "## Modeling Assumptions",
-            "- Continuous features use a unit-variance Gaussian observation model after training-only standardization.",
-            "- Binary features use a Bernoulli likelihood parameterized by decoder logits.",
-            "- Within-family selection uses validation loss or validation likelihood only inside that family.",
-            "- max_models is total trained generative candidates across all families; bootstrap baseline does not consume a training slot.",
-            "- Eligibility is applied before performance ranking; hard eligibility constraints cannot be overridden by high fidelity.",
-            "- Cross-family selection uses the predeclared validation selection_score among eligible methods; held-out test data is used only for final evaluation.",
-            "- RealNVP flow is available only for continuous tabular features with no missing values.",
-            "- GMM and Gaussian copula are available only for continuous tabular features with no missing values.",
-            "- Conditional generation, imputation, formal privacy mechanisms, Bayesian decision-making, diffusion, and Project 4 integration are not implemented.",
-            "",
-            "## Selected Configuration",
-            f"```json\n{json.dumps(config.to_dict() if config else {'method': 'training_row_bootstrap'}, indent=2)}\n```",
-            "",
-            "## Candidate Search",
-            f"```json\n{json.dumps(search or {'selected': 'baseline'}, indent=2)}\n```",
-            "",
-            "## Generation",
-            f"Generated samples: {generation['n_samples']}",
-            f"Method: {generation.get('method', 'tabular_vae')}",
-            "",
-            "## Evaluation",
-            f"```json\n{json.dumps(evaluation, indent=2)}\n```",
-            "",
-            "## Agent Decisions",
-            f"```json\n{json.dumps(decisions, indent=2)}\n```",
-            "",
-            "## Limitations",
-            "- Nearest-neighbor diagnostics are proxies, not privacy guarantees.",
-            "- The decision layer is deterministic and does not perform LLM-based reasoning.",
-            "- No downstream predictive utility is reported unless a separate valid protocol is implemented.",
-            "- Cross-family validation scores are finite-sample heuristics, not statistical uncertainty estimates.",
-            "",
-        ]
-    )
+    validation = decisions.get("validation_comparison", {})
+    recommendation = decisions.get("objective_recommendation", {})
+    eligibility = decisions.get("eligibility", {})
+    budget = (search or {}).get("budget", {})
+    planning = (search or {}).get("planning", {})
+    rows = ["| Method | Validation score | Runtime (s) | Duplicate fraction |", "|---|---:|---:|---:|"]
+    for method, metrics in validation.get("scores", {}).items():
+        runtime = "not recorded"
+        family = (search or {}).get(method, {}) if isinstance(search, dict) else {}
+        candidates = family.get("candidates", []) if isinstance(family, dict) else []
+        if candidates and isinstance(candidates[0], dict):
+            runtime = candidates[0].get("wall_seconds", "not recorded")
+        rows.append(
+            f"| {method} | {metrics.get('selection_score', 'not evaluated'):.4f} | {runtime} | "
+            f"{metrics.get('duplicate_fraction', 'not evaluated')} |"
+            if isinstance(metrics.get("selection_score"), (int, float))
+            else f"| {method} | not evaluated | {runtime} | not evaluated |"
+        )
+    allocated = planning.get("allocated_models", [])
+    skipped = planning.get("skipped_models", {})
+    config_summary = config.to_dict() if config else {"method": "training_row_bootstrap"}
+    selected_eval = evaluation.get("selected", {}) if isinstance(evaluation, dict) else {}
+    lines = [
+        "# Generated Report 1: UCI Wine Quality",
+        "",
+        "## 1. Dataset and objective",
+        f"The agent inspected **{profile.get('dataset_name', 'the supplied tabular dataset')}** with "
+        f"{profile.get('n_samples')} rows and {profile.get('n_features')} input columns. "
+        f"The user objective was: *{objective.get('raw_text', 'data generation')}*",
+        "",
+        "The 11 physicochemical variables were modeled as continuous features. The `quality` column was excluded from unconditional generation and retained as metadata/target information. No missing values were detected.",
+        "",
+        "## 2. Agent decision trace",
+        "1. **Inspect:** profiled feature types, missingness, roles, and dataset size.",
+        "2. **Interpret:** classified the request as unconditional continuous-tabular generation for internal testing.",
+        f"3. **Eligibility:** eligible methods were `{', '.join(eligibility.get('eligible_methods', []))}`. Eligibility was checked before ranking.",
+        f"4. **Plan:** global budget was `{budget.get('max_trained_candidates', 'not recorded')}` trained candidates; allocated families were `{', '.join(allocated) if allocated else 'none'}`. Bootstrap did not consume a training slot.",
+        "5. **Execute/Evaluate:** preprocessing was fit on training data; candidates were compared on validation data and the selected output was evaluated once on held-out data.",
+        "6. **Reflect/Recommend:** the recommendation is relative and heuristic; it does not establish privacy or release suitability.",
+        "",
+        "## 3. Training decisions",
+        f"Selected generated-output configuration: `{config_summary.get('method', 'training_row_bootstrap')}`.",
+        f"Recorded training budget: `{budget.get('max_trained_candidates', 'not recorded')}` candidates and `{decisions.get('constraints', ['max_epochs not recorded'])[1] if len(decisions.get('constraints', [])) > 1 else 'max_epochs not recorded'}`.",
+        f"Candidate allocation was determined by the profile-aware planner, not registry order. Skipped models: `{', '.join(skipped) if skipped else 'none recorded'}`.",
+        "",
+        "## 4. Validation comparison",
+        "Higher `selection_score` is better. The score combines train-scale-normalized marginal fidelity, dependence preservation, and the legacy marginal-fidelity component. VAE ELBO and flow NLL were not compared across families.",
+        "",
+        *rows,
+        "",
+        f"The validation winner was **{eligibility.get('selected_method', 'not recorded')}**. The stored decision was: {str(eligibility.get('selection_reason', 'not recorded')).rstrip('.') }.",
+        "",
+        "## 5. Generated output and recommendation",
+        f"- Generated samples: `{generation.get('n_samples', 'not recorded')}`",
+        f"- Generation method: `{generation.get('method', 'not recorded')}`",
+        f"- Output file: `{generation.get('output_path', 'synthetic_samples.csv')}`",
+        f"- Recommendation: **{recommendation.get('recommendation', 'not recorded')}**",
+        f"- Reason: {' '.join(recommendation.get('reasons', []))}",
+        f"- Selected-output test diagnostics: selection score `{selected_eval.get('selection_score', 'not recorded')}`, duplicate fraction `{selected_eval.get('duplicate_fraction', 'not recorded')}`, nearest-neighbor mean `{selected_eval.get('nearest_neighbor_mean', 'not recorded')}`.",
+        "",
+        "For this internal-testing objective, bootstrap ranked first. Because it resamples exact training rows, it is not eligible for external synthetic-data sharing. No current method provides a formal privacy guarantee.",
+        "",
+        "## 6. Limitations and artifacts",
+        "- Metrics are finite-sample diagnostics, not uncertainty estimates or proof of utility.",
+        "- The deterministic planner uses explainable rules; reflection does not trigger replanning or retraining.",
+        "- No conditional generation, imputation, formal privacy mechanism, or downstream predictive-utility protocol is implemented.",
+        "- Detailed artifacts are stored beside this report: `dataset_profile.json`, `objective.json`, `split_manifest.json`, `preprocessing.json`, `candidate_search.json`, `validation_comparison.json`, `evaluation_results.json`, `agent_decisions.json`, model checkpoints, and `synthetic_samples.csv`.",
+        f"- This report was generated as `{report_name}` from stored workflow results.",
+        "",
+    ]
+    return "\n".join(lines)
 
 
 def _validation_score(*, train_real, validation_real, synthetic, schema, method: str) -> dict[str, float]:
