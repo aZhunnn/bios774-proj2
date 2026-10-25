@@ -7,6 +7,7 @@ from pathlib import Path
 import json
 
 from generative_agent.agent import AgentFoundation
+from generative_agent.ai_analysis import FinalAnalysisConfig, generate_final_analysis
 from generative_agent.artifacts import LocalArtifactStore
 from generative_agent.classical import (
     CopulaConfig,
@@ -49,6 +50,8 @@ def run_tabular_generation_workflow(
     roles: ColumnRoles | None = None,
     budget: ExperimentBudget | None = None,
     n_synthetic: int | None = None,
+    ai_analysis_mode: str = "auto",
+    ai_model: str = "gpt-4o-mini",
 ) -> WorkflowResult:
     output = Path(output_dir)
     store = LocalArtifactStore(output)
@@ -538,6 +541,20 @@ def run_tabular_generation_workflow(
     store.save_json("evaluation_results", evaluation_payload, kind="evaluation")
     store.save_json("agent_decisions", decisions, kind="decisions")
 
+    ai_analysis = generate_final_analysis(
+        {
+            "modality": "continuous_tabular",
+            "profile": asdict(state.profile),
+            "objective": asdict(state.objective),
+            "planning": search_payload,
+            "generation": generation_metadata,
+            "evaluation": evaluation_payload,
+            "decisions": decisions,
+        },
+        FinalAnalysisConfig(mode=ai_analysis_mode, model=ai_model),
+    )
+    store.save_json("ai_assisted_analysis", ai_analysis, kind="analysis")
+
     report_path = output / report_name
     report_path.write_text(
         _render_report(
@@ -549,6 +566,7 @@ def run_tabular_generation_workflow(
             evaluation=evaluation_payload,
             decisions=decisions,
             report_name=report_name,
+            ai_analysis=ai_analysis,
         ),
         encoding="utf-8",
     )
@@ -571,6 +589,7 @@ def _render_report(
     evaluation: dict[str, object],
     decisions: dict[str, object],
     report_name: str,
+    ai_analysis: dict[str, object] | None = None,
 ) -> str:
     validation = decisions.get("validation_comparison", {})
     recommendation = decisions.get("objective_recommendation", {})
@@ -637,12 +656,23 @@ def _render_report(
         "## 6. Limitations and artifacts",
         "- Metrics are finite-sample diagnostics, not uncertainty estimates or proof of utility.",
         "- The deterministic planner uses explainable rules; reflection does not trigger replanning or retraining.",
+        "",
+        "## 7. AI-assisted final analysis",
+        _ai_analysis_markdown(ai_analysis),
         "- No conditional generation, imputation, formal privacy mechanism, or downstream predictive-utility protocol is implemented.",
         "- Detailed artifacts are stored beside this report: `dataset_profile.json`, `objective.json`, `split_manifest.json`, `preprocessing.json`, `candidate_search.json`, `validation_comparison.json`, `evaluation_results.json`, `agent_decisions.json`, model checkpoints, and `synthetic_samples.csv`.",
         f"- This report was generated as `{report_name}` from stored workflow results.",
         "",
     ]
     return "\n".join(lines)
+
+
+def _ai_analysis_markdown(analysis: dict[str, object] | None) -> str:
+    analysis = analysis or {}
+    status = analysis.get("status", "not recorded")
+    if status == "generated":
+        return f"Status: `{status}`; provider: `{analysis.get('provider')}`; model: `{analysis.get('model')}`.\n\n{analysis.get('text', '')}"
+    return f"Status: `{status}`. {analysis.get('reason', 'No AI-assisted narrative was recorded.')}"
 
 
 def _validation_score(*, train_real, validation_real, synthetic, schema, method: str) -> dict[str, float]:

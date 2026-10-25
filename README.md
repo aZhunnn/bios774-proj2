@@ -19,6 +19,22 @@ PYTHONPATH=src python -m generative_agent.cli DATASET --modality auto --objectiv
 
 The modality is inferred from `.csv`/`.tsv` and `.npz` inputs, or can be specified explicitly with `--modality tabular` or `--modality image`. See the submission report and the two generated reports for reproducible real-data commands.
 
+## Optional AI-assisted final analysis
+
+The scientific workflow remains deterministic: eligibility, budget allocation, model training, validation selection, and held-out evaluation are never delegated to an LLM. The final narrative can optionally be generated from the stored profile, planning trace, evaluation results, and decision artifacts.
+
+With the optional dependency installed and an API key configured:
+
+```bash
+pip install -e '.[ai]'
+ANTHROPIC_API_KEY=... PYTHONPATH=src python -m generative_agent.cli DATASET \
+  --objective "Generate synthetic data for internal testing." \
+  --output-dir outputs/ai_assisted_run --ai-analysis anthropic \
+  --ai-model claude-haiku-5-5
+```
+
+The default `--ai-analysis auto` uses Anthropic when `ANTHROPIC_API_KEY` is present, or OpenAI when `OPENAI_API_KEY` is present. Without credentials, it records a transparent deterministic fallback in `ai_assisted_analysis.json`; use `--ai-analysis disabled` to suppress the section explicitly. The generated report never claims that an AI call occurred unless the artifact records `status: generated`.
+
 ## Verification
 
 ```bash

@@ -10,6 +10,7 @@ import time
 import numpy as np
 
 from generative_agent.artifacts import LocalArtifactStore
+from generative_agent.ai_analysis import FinalAnalysisConfig, generate_final_analysis
 from generative_agent.data import DatasetKind
 from generative_agent.eligibility import method_eligibility, select_eligible_method
 from generative_agent.image_data import ImagePreprocessConfig, SplitNpzImageAdapter
@@ -42,6 +43,8 @@ def run_image_generation_workflow(
     gan_latent_dim: int = 32,
     n_generated: int = 32,
     repeated_generation_seeds: int = 3,
+    ai_analysis_mode: str = "auto",
+    ai_model: str = "gpt-4o-mini",
 ) -> ImageWorkflowResult:
     workflow_start = time.perf_counter()
     selected_budget = budget or ExperimentBudget(max_models=1, max_epochs=3, max_wall_minutes=30)
@@ -167,6 +170,19 @@ def run_image_generation_workflow(
         ],
     }
     store.save_json("agent_decisions", decisions, kind="decisions")
+    ai_analysis = generate_final_analysis(
+        {
+            "modality": "image",
+            "profile": bundle.profile.to_dict(),
+            "objective": objective_text,
+            "planning": planning,
+            "validation": candidate_records,
+            "test_evaluation": final_test_evaluation.to_dict(),
+            "decisions": decisions,
+        },
+        FinalAnalysisConfig(mode=ai_analysis_mode, model=ai_model),
+    )
+    store.save_json("ai_assisted_analysis", ai_analysis, kind="analysis")
     report = output / report_name
     report.write_text(
         _render_report(
@@ -179,6 +195,7 @@ def run_image_generation_workflow(
             decisions=decisions,
             candidates=candidate_records,
             report_name=report_name,
+            ai_analysis=ai_analysis,
         ),
         encoding="utf-8",
     )
@@ -355,7 +372,7 @@ def _evaluate_selected_on_test(*, name: str, model, train_dataset, test_dataset,
     raise ValueError(f"Unsupported selected image model: {name}.")
 
 
-def _render_report(*, profile, objective_text, config, training, validation_evaluation, test_evaluation, decisions, candidates, report_name) -> str:
+def _render_report(*, profile, objective_text, config, training, validation_evaluation, test_evaluation, decisions, candidates, report_name, ai_analysis=None) -> str:
     planning = decisions.get("planning", {})
     eligibility = decisions.get("eligibility", {})
     absolute = decisions.get("absolute_evidence", {})
@@ -405,9 +422,20 @@ def _render_report(*, profile, objective_text, config, training, validation_eval
         "- Image metrics are finite-sample heuristics and are not calibrated acceptance thresholds.",
         "- The VAE and GAN are unconditional; labels are not used for conditional generation.",
         "- Reflection explains completed decisions but does not trigger replanning or retraining.",
+        "",
+        "## 7. AI-assisted final analysis",
+        _ai_analysis_markdown(ai_analysis),
         "- Generated outputs include `image_gan_test_grid.png`, validation grids, `image_vae_checkpoint.pt`, and `image_gan_checkpoint.pt`.",
         "- Detailed artifacts are stored beside this report: `dataset_profile.json`, `objective.json`, `planning.json`, `preprocessing.json`, `candidate_results.json`, `training_history.json`, `evaluation_results.json`, `final_test_evaluation.json`, `agent_decisions.json`, checkpoints, and generated image grids.",
         f"- This report was generated as `{report_name}` from stored workflow results.",
         "",
     ]
     return "\n".join(lines)
+
+
+def _ai_analysis_markdown(analysis: dict[str, object] | None) -> str:
+    analysis = analysis or {}
+    status = analysis.get("status", "not recorded")
+    if status == "generated":
+        return f"Status: `{status}`; provider: `{analysis.get('provider')}`; model: `{analysis.get('model')}`.\n\n{analysis.get('text', '')}"
+    return f"Status: `{status}`. {analysis.get('reason', 'No AI-assisted narrative was recorded.')}"

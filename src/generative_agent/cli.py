@@ -32,6 +32,13 @@ def main() -> None:
     parser.add_argument("--max-validation-samples", type=int)
     parser.add_argument("--max-test-samples", type=int)
     parser.add_argument("--repeated-generation-seeds", type=int, default=3)
+    parser.add_argument(
+        "--ai-analysis",
+        choices=("auto", "openai", "anthropic", "disabled"),
+        default="auto",
+        help="Optional final narrative analysis; auto uses a configured Anthropic or OpenAI key.",
+    )
+    parser.add_argument("--ai-model", default="gpt-4o-mini")
     args = parser.parse_args()
     dataset_path = Path(args.dataset_path)
     modality = _infer_modality(dataset_path, args.modality)
@@ -53,6 +60,8 @@ def main() -> None:
             gan_latent_dim=args.gan_latent_dim,
             n_generated=args.n_synthetic or 32,
             repeated_generation_seeds=args.repeated_generation_seeds,
+            ai_analysis_mode=args.ai_analysis,
+            ai_model=args.ai_model,
         )
     else:
         result = run_tabular_generation_workflow(
@@ -67,6 +76,8 @@ def main() -> None:
             ),
             budget=budget,
             n_synthetic=args.n_synthetic,
+            ai_analysis_mode=args.ai_analysis,
+            ai_model=args.ai_model,
         )
     print(f"Report: {result.report_path}")
     if hasattr(result, "synthetic_path"):
